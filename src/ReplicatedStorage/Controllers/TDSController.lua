@@ -9,6 +9,7 @@ TDSController.__index = TDSController
 function TDSController.new(player, camera)
     local self = {
         player = player,
+        mouse = player:GetMouse(),
         camera = TDSCamera.new(camera),
 
         characters = {},
@@ -40,7 +41,7 @@ function TDSController:Destroy()
 end
 
 function TDSController:CharacterAdded(character)
-    table.insert(self.characters, MoveCharacter.new(character))
+    table.insert(self.characters, MoveCharacter.new(self.mouse, character))
 
     TDSCamera:ChangeSubject(character.PrimaryPart)
 

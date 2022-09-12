@@ -12,8 +12,10 @@ local VALID_STATES = {
 local MoveCharacter = {}
 MoveCharacter.__index = MoveCharacter
 
-function MoveCharacter.new(character)
+function MoveCharacter.new(mouse, character)
     local self = {
+        mouse = mouse,
+
         character = character,
         humanoid = character:WaitForChild("Humanoid"),
 
@@ -42,6 +44,10 @@ function MoveCharacter:Destroy()
 end
 
 function MoveCharacter:Update()
+    local hitPos = self.mouse.Hit.Position
+    local rootPos = self.character.PrimaryPart.CFrame.Position
+    self.character.PrimaryPart.CFrame = CFrame.new(rootPos, Vector3.new(hitPos.X, rootPos.Y, hitPos.Z))
+
     local wishDir = Vector3.new(Input:GetAxis("Horizontal"), 0, -Input:GetAxis("Vertical"))
     self.humanoid:Move(wishDir, false)
 end
