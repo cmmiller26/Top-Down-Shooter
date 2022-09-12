@@ -9,26 +9,25 @@ local VALID_STATES = {
     [Enum.HumanoidStateType.None] = true
 }
 
-local TDSCharacter = {}
-TDSCharacter.__index = TDSCharacter
+local MoveCharacter = {}
+MoveCharacter.__index = MoveCharacter
 
-function TDSCharacter.new(camera, character)
+function MoveCharacter.new(character)
     local self = {
-        camera = camera,
-        
         character = character,
         humanoid = character:WaitForChild("Humanoid"),
 
         connections = {}
     }
 
-    setmetatable(self, TDSCharacter)
+    setmetatable(self, MoveCharacter)
 
     for _, state in ipairs(Enum.HumanoidStateType:GetEnumItems()) do
         if not VALID_STATES[state] then
             self.humanoid:SetStateEnabled(state, false)
         end
     end
+    self.humanoid.AutoRotate = false
 
     table.insert(self.connections, RunService.Heartbeat:Connect(function()
         self:Update()
@@ -36,14 +35,15 @@ function TDSCharacter.new(camera, character)
 
     return self
 end
-function TDSCharacter:Destroy()
+function MoveCharacter:Destroy()
     for _, connection in ipairs(self.connections) do
         connection:Disconnect()
     end
 end
 
-function TDSCharacter:Update()
-    
+function MoveCharacter:Update()
+    local wishDir = Vector3.new(Input:GetAxis("Horizontal"), 0, -Input:GetAxis("Vertical"))
+    self.humanoid:Move(wishDir, false)
 end
 
-return TDSCharacter
+return MoveCharacter

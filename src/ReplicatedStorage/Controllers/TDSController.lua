@@ -1,6 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local TDSCharacter = require(ReplicatedStorage.Characters.TDSCharacter)
+local TDSCamera = require(ReplicatedStorage.Cameras.TDSCamera)
+local MoveCharacter = require(ReplicatedStorage.Characters.MoveCharacter)
 
 local TDSController = {}
 TDSController.__index = TDSController
@@ -8,7 +9,7 @@ TDSController.__index = TDSController
 function TDSController.new(player, camera)
     local self = {
         player = player,
-        camera = camera,
+        camera = TDSCamera.new(camera),
 
         characters = {},
 
@@ -22,8 +23,8 @@ function TDSController.new(player, camera)
     table.insert(self.connections, self.player.CharacterAdded:Connect(function(character)
         self:CharacterAdded(character)
     end))
-    table.insert(self.connections, self.player.CharacterRemoving:Connect(function(character)
-        self:CharacterRemoving(character)
+    table.insert(self.connections, self.player.CharacterRemoving:Connect(function()
+        self:CharacterRemoving()
     end))
 
     return self
@@ -39,14 +40,16 @@ function TDSController:Destroy()
 end
 
 function TDSController:CharacterAdded(character)
-    table.insert(self.characters, TDSCharacter.new(self.camera, character))
+    table.insert(self.characters, MoveCharacter.new(character))
+
+    TDSCamera:ChangeSubject(character.PrimaryPart)
 
     table.insert(self.connections, character.Humanoid.Died:Connect(function()
         self:Died()
     end))
     self.alive = true
 end
-function TDSController:CharacterRemoving(character)
+function TDSController:CharacterRemoving()
     if self.alive then
         self:Died()
     end
