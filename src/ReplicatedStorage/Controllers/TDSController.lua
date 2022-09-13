@@ -55,7 +55,7 @@ function TDSController:CharacterAdded(character)
     table.insert(self.characters, MoveCharacter.new(self.mouse, character))
     table.insert(self.characters, TDSCharacter.new(self.weapons, character))
 
-    TDSCamera:ChangeSubject(character.PrimaryPart)
+    TDSCamera:ChangeSubject(character)
 
     table.insert(self.connections, character.Humanoid.Died:Connect(function()
         self:Died()
