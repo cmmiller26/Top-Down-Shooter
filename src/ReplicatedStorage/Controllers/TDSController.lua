@@ -1,7 +1,9 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local TDSCamera = require(ReplicatedStorage.Cameras.TDSCamera)
+
 local MoveCharacter = require(ReplicatedStorage.Characters.MoveCharacter)
+local TDSCharacter = require(ReplicatedStorage.Characters.TDSCharacter)
 
 local TDSController = {}
 TDSController.__index = TDSController
@@ -12,6 +14,8 @@ function TDSController.new(player, camera)
         mouse = player:GetMouse(),
         camera = TDSCamera.new(camera),
 
+        weapons = {},
+
         characters = {},
 
         alive = false,
@@ -21,12 +25,19 @@ function TDSController.new(player, camera)
 
     setmetatable(self, TDSController)
 
+    script.Connect:FireServer()
+    self.weapons = script.GetWeapons:InvokeServer()
+
     table.insert(self.connections, self.player.CharacterAdded:Connect(function(character)
         self:CharacterAdded(character)
     end))
     table.insert(self.connections, self.player.CharacterRemoving:Connect(function()
         self:CharacterRemoving()
     end))
+
+    if self.player.Character then
+        self:CharacterAdded(self.player.Character)
+    end
 
     return self
 end
@@ -42,6 +53,7 @@ end
 
 function TDSController:CharacterAdded(character)
     table.insert(self.characters, MoveCharacter.new(self.mouse, character))
+    table.insert(self.characters, TDSCharacter.new(self.weapons, character))
 
     TDSCamera:ChangeSubject(character.PrimaryPart)
 
