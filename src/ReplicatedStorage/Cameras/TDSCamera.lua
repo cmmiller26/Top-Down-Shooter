@@ -12,16 +12,8 @@ local TWEEN_TIME = 0.25
 local TDSCamera = {}
 TDSCamera.__index = TDSCamera
 
-local function inList(a, tbl)
+local function inTable(a, tbl)
     for _, b in ipairs(tbl) do
-        if b == a then
-            return true
-        end
-    end
-    return false
-end
-local function inDictionary(a, dict)
-    for b, _ in pairs(dict) do
         if b == a then
             return true
         end
@@ -68,18 +60,18 @@ function TDSCamera:Update(deltaTime)
         local targetCFrame = CFrame.new(targetPos + OFFSET * self.zoom, targetPos)
         self.camera.CFrame = self.camera.CFrame:Lerp(targetCFrame, deltaTime * SPEED)
 
-        local obscuring = self.camera:GetPartsObscuringTarget({targetPos}, {self.subject})
+        local obscuring = self.camera:GetPartsObscuringTarget({self.subject.Head.Position}, {self.subject})
         for _, part in ipairs(obscuring) do
-            if part:FindFirstChild("Obscure") and not inDictionary(part, self.obscuring) then
-                self.obscuring[part] = part.Transparency
+            if part:FindFirstChild("Obscure") and not inTable(part, self.obscuring) then
+                table.insert(self.obscuring, part)
                 TweenService:Create(part, TweenInfo.new(TWEEN_TIME), {Transparency = OBSCURE_TRANSPARENCY}):Play()
             end
         end
 
-        for part, transparency in pairs(self.obscuring) do
-            if not inList(part, obscuring) then
-                TweenService:Create(part, TweenInfo.new(TWEEN_TIME), {Transparency = transparency}):Play()
-                self.obscuring[part] = nil
+        for index, part in pairs(self.obscuring) do
+            if not inTable(part, obscuring) then
+                TweenService:Create(part, TweenInfo.new(TWEEN_TIME), {Transparency = part.Obscure.Value}):Play()
+                table.remove(self.obscuring, index)
             end
         end
     end

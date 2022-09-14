@@ -44,8 +44,16 @@ function MoveCharacter:Destroy()
 end
 
 function MoveCharacter:Update()
-    local hitPos = self.mouse.Hit.Position
-    local rootPos = self.character.PrimaryPart.CFrame.Position
+    local mouseRay = self.mouse.UnitRay
+
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterDescendantsInstances = {workspace.Baseplate}
+    raycastParams.FilterType = Enum.RaycastFilterType.Whitelist
+
+    local raycastResult = workspace:Raycast(mouseRay.Origin, mouseRay.Direction * 1000, raycastParams)
+    local hitPos = raycastResult and raycastResult.Position or mouseRay.Origin + mouseRay.Direction
+
+    local rootPos = self.character.PrimaryPart.Position
     self.character.PrimaryPart.CFrame = CFrame.new(rootPos, Vector3.new(hitPos.X, rootPos.Y, hitPos.Z))
 
     local wishDir = Vector3.new(-Input:GetAxis("Horizontal"), 0, Input:GetAxis("Vertical"))
