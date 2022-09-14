@@ -6,7 +6,7 @@ local FOV = 30
 local OFFSET = Vector3.new(0, 40, -10)
 local SPEED = 8
 
-local OBSCURE_TRANSPARENCY = 0.75
+local OBSCURE_TRANSPARENCY = 1
 local TWEEN_TIME = 0.25
 
 local TDSCamera = {}
@@ -56,10 +56,6 @@ end
 
 function TDSCamera:Update(deltaTime)
     if self.subject then
-        local targetPos = self.subject.PrimaryPart.Position
-        local targetCFrame = CFrame.new(targetPos + OFFSET * self.zoom, targetPos)
-        self.camera.CFrame = self.camera.CFrame:Lerp(targetCFrame, deltaTime * SPEED)
-
         local obscuring = self.camera:GetPartsObscuringTarget({self.subject.Head.Position}, {self.subject})
         for _, part in ipairs(obscuring) do
             if part:FindFirstChild("Obscure") and not inTable(part, self.obscuring) then
@@ -74,6 +70,15 @@ function TDSCamera:Update(deltaTime)
                 table.remove(self.obscuring, index)
             end
         end
+
+        local zoom = self.zoom
+        if #obscuring > 0 then
+            zoom = 1
+        end
+
+        local targetPos = self.subject.PrimaryPart.Position
+        local targetCFrame = CFrame.new(targetPos + OFFSET * zoom, targetPos)
+        self.camera.CFrame = self.camera.CFrame:Lerp(targetCFrame, deltaTime * SPEED)
     end
 end
 
