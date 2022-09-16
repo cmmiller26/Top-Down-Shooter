@@ -1,5 +1,8 @@
 local PhysicsService = game:GetService("PhysicsService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
+
+local HitboxHandler = require(ServerScriptService.HitboxHandler)
 
 local Controller = ReplicatedStorage.Controllers.TDSController
 local Character = ReplicatedStorage.Characters.TDSCharacter
@@ -37,7 +40,7 @@ function TDSPlayer.new(player)
         self:CharacterAdded(character)
     end))
     table.insert(self.connections, self.player.CharacterRemoving:Connect(function()
-        self.character = nil
+        self:CharacterRemoving()
     end))
 
     if self.player.Character then
@@ -87,6 +90,13 @@ function TDSPlayer:CharacterAdded(character)
             end
         end
     end)
+
+    HitboxHandler:AddCharacter(self.character)
+end
+function TDSPlayer:CharacterRemoving()
+    HitboxHandler:RemoveCharacter(self.character)
+
+    self.character = nil
 end
 
 function TDSPlayer:Remotes()
