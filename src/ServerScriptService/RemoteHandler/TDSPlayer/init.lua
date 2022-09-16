@@ -127,6 +127,16 @@ function TDSPlayer:Remotes()
             end
         end
     end))
+
+    table.insert(self.connections, Character.Fire.OnServerEvent:Connect(function(player, origin, direction, hit, playerTick)
+        if player == self.player then
+            if self.character and self.character:FindFirstChild("Humanoid") and self.character.Humanoid.Health > 0 then
+                for _, hitbox in ipairs(HitboxHandler:GetAllHitboxes(playerTick)) do
+                    
+                end
+            end
+        end
+    end))
 end
 
 return TDSPlayer

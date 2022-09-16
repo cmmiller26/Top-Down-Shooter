@@ -1,7 +1,7 @@
 local RunService = game:GetService("RunService")
 
 local HitboxState = require(script.HitboxState)
-local MakeHitboxCharacter = require(script.MakeHitboxCharacter)
+local MakeHitbox = require(script.MakeHitbox)
 
 local MAX_STATES = 120
 
@@ -13,7 +13,9 @@ function HitboxHandler.new()
         characters = {},
 
         hitboxStates = {},
-        serverTick = 0
+
+        deltaTime = 0,
+        serverTick = 0,
     }
 
     setmetatable(self, HitboxHandler)
@@ -27,12 +29,10 @@ end
 
 function HitboxHandler:Update(deltaTime)
     for _, character in ipairs(self.characters) do
-        self.hitboxStates[character][self.serverTick] = HitboxState.new(character)
-        local hitboxCharacter = MakeHitboxCharacter(self.hitboxStates[character][self.serverTick])
-        hitboxCharacter.Parent = workspace
-        game:GetService("Debris"):AddItem(hitboxCharacter, 2)
+        self.hitboxStates[character][self.serverTick % MAX_STATES] = HitboxState.new(character)
     end
 
+    self.deltaTime = deltaTime
     self.serverTick += 1
 end
 
@@ -48,6 +48,18 @@ function HitboxHandler:RemoveCharacter(character)
             break
         end
     end
+end
+
+function HitboxHandler:GetAllHitboxes(playerTick)
+    local tickDiff = math.round((tick() - playerTick) / self.deltaTime)
+    local curTick = (self.serverTick - tickDiff) % MAX_STATES
+
+    local hitboxes = {}
+    for character, states in pairs(self.hitboxStates) do
+        
+    end
+
+    return hitboxes
 end
 
 return HitboxHandler.new()

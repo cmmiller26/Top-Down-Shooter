@@ -1,4 +1,4 @@
-local function MakeHitboxCharacter(hitboxState)
+local function MakeHitbox(hitboxState)
     local character = script.HitboxCharacter:Clone()
     character.Head.CFrame = hitboxState["Head"]
     character.Torso.CFrame = hitboxState["Torso"]
@@ -10,4 +10,4 @@ local function MakeHitboxCharacter(hitboxState)
     return character
 end
 
-return MakeHitboxCharacter
+return MakeHitbox

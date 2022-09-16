@@ -118,12 +118,17 @@ function TDSCharacter:Fire(toFire)
             local rootCFrame = self.character.PrimaryPart.CFrame
             local origin = rootCFrame.Position
             local direction = rootCFrame.LookVector * self.curWeapon.Settings.Distance.Value
+
+            local hit
             local raycastResult = workspace:Raycast(origin, direction, raycastParams)
             if raycastResult then
+                hit = raycastResult.Instance
                 Debug.Point(raycastResult.Position, Color3.new(0, 1, 0))
             else
                 Debug.Point(origin + direction, Color3.new(1, 0, 0))
             end
+
+            script.Fire:FireServer(origin, direction, hit, tick())
 
             wait(60/self.curWeapon.Settings.RPM.Value)
         end
