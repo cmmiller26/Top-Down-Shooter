@@ -63,6 +63,8 @@ end
 function TDSPlayer:CharacterAdded(character)
     self.character = character
     self.character.PrimaryPart = self.character:WaitForChild("HumanoidRootPart")
+    self.character.PrimaryPart.CanQuery = false
+    self.character.PrimaryPart.CanTouch = false
 
     local attach = Instance.new("Motor6D")
     attach.Name = "Attach"
@@ -128,11 +130,15 @@ function TDSPlayer:Remotes()
         end
     end))
 
-    table.insert(self.connections, Character.Fire.OnServerEvent:Connect(function(player, origin, direction, hit, playerTick)
+    table.insert(self.connections, Character.Fire.OnServerEvent:Connect(function(player, origin, hit, hitPos, playerTick)
         if player == self.player then
             if self.character and self.character:FindFirstChild("Humanoid") and self.character.Humanoid.Health > 0 then
-                for _, hitbox in ipairs(HitboxHandler:GetAllHitboxes(playerTick)) do
-                    
+                if hit then
+                    for _, hitbox in ipairs(HitboxHandler:GetAllHitboxes(playerTick, self.character)) do
+                        local debugPart = hitbox:FindFirstChild(hit.Name):Clone()
+                        debugPart.Parent = workspace
+                        game:GetService("Debris"):AddItem(debugPart)
+                    end
                 end
             end
         end

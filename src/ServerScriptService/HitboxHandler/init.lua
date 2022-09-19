@@ -50,13 +50,15 @@ function HitboxHandler:RemoveCharacter(character)
     end
 end
 
-function HitboxHandler:GetAllHitboxes(playerTick)
+function HitboxHandler:GetAllHitboxes(playerTick, ignoreCharacter)
     local tickDiff = math.round((tick() - playerTick) / self.deltaTime)
-    local curTick = (self.serverTick - tickDiff) % MAX_STATES
+    local curTick = self.serverTick - tickDiff
 
     local hitboxes = {}
     for character, states in pairs(self.hitboxStates) do
-        
+        if character ~= ignoreCharacter then
+            table.insert(hitboxes, MakeHitbox(states[curTick % MAX_STATES]))
+        end
     end
 
     return hitboxes
