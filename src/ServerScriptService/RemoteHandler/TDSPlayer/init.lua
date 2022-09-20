@@ -135,9 +135,7 @@ function TDSPlayer:Remotes()
             if self.character and self.character:FindFirstChild("Humanoid") and self.character.Humanoid.Health > 0 then
                 if hit then
                     for _, hitbox in ipairs(HitboxHandler:GetAllHitboxes(playerTick, self.character)) do
-                        local debugPart = hitbox:FindFirstChild(hit.Name):Clone()
-                        debugPart.Parent = workspace
-                        game:GetService("Debris"):AddItem(debugPart)
+                        
                     end
                 end
             end
