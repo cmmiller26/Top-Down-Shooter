@@ -116,10 +116,14 @@ function TDSCharacter:Fire(toFire)
 
         local function Fire()
             local rootCFrame = self.character.PrimaryPart.CFrame
-            local origin = rootCFrame.Position
-            local direction = rootCFrame.LookVector
-
-            local projectile = Projectile.new(origin, direction * self.curWeapon.Settings.Speed.Value, self.curWeapon.Settings.Distance.Value, raycastParams)
+            local projectile = Projectile.new({
+                origin = rootCFrame.Position,
+                velocity = rootCFrame.LookVector * self.curWeapon.Settings.Speed.Value,
+                distance = self.curWeapon.Settings.Distance.Value,
+                raycastParams = raycastParams,
+                meshPrefab = self.curWeapon.Effects:FindFirstChild("Projectile"),
+                meshPos = self.curWeapon.PrimaryPart.Barrel.WorldPosition
+            })
 
             script.Fire:FireServer(origin, direction, tick())
 

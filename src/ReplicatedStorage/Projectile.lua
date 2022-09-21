@@ -5,19 +5,25 @@ local Debug = require(ReplicatedStorage.Debug)
 
 local Projectile = {}
 
-function Projectile.new(origin, velocity, distance, raycastParams)
+function Projectile.new(args)
     local self = {
-        origin = origin,
-        position = origin,
+        origin = args.origin,
+        position = args.origin,
 
-        velocity = velocity,
+        velocity = args.velocity,
 
-        distance = distance,
+        distance = args.distance,
 
-        raycastParams = raycastParams,
+        raycastParams = args.raycastParams,
+
+        mesh = nil,
+        meshOffset = args.meshPos - args.origin,
 
         connections = {}
     }
+    
+    self.mesh = args.meshPrefab:Clone()
+    self.mesh.Parent = workspace.Bullets
 
     table.insert(self.connections, RunService.Heartbeat:Connect(function(deltaTime)
         if (self.position - self.origin).Magnitude < self.distance then
@@ -29,6 +35,9 @@ function Projectile.new(origin, velocity, distance, raycastParams)
 
                 self:Destroy()
             end
+
+            local meshPos = self.position + self.meshOffset
+            self.mesh.CFrame = CFrame.new(meshPos, meshPos + direction)
 
             Debug.Point(self.position, Color3.new(1, 0, 0))
 
@@ -42,6 +51,8 @@ function Projectile.new(origin, velocity, distance, raycastParams)
         for _, connection in ipairs(self.connections) do
             connection:Disconnect()
         end
+
+        self.mesh:Destroy()
     end
 
     return self

@@ -1,5 +1,7 @@
 local Debris = game:GetService("Debris")
 
+local LIFETIME = 2
+
 local Debug = {
     enabled = true
 }
@@ -15,7 +17,7 @@ function Debug.Point(position, color)
         point.ZIndex = 1
         point.CFrame = CFrame.new(position)
         point.Parent = workspace.Terrain.Debug
-        game:GetService("Debris"):AddItem(point)
+        game:GetService("Debris"):AddItem(point, LIFETIME)
     end
 end
 
