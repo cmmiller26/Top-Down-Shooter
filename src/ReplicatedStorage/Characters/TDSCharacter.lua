@@ -1,7 +1,7 @@
 local ContextActionService = game:GetService("ContextActionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Debug = require(ReplicatedStorage.Debug)
+local Projectile = require(ReplicatedStorage.Projectile)
 
 local TDSCharacter = {}
 TDSCharacter.__index = TDSCharacter
@@ -117,7 +117,9 @@ function TDSCharacter:Fire(toFire)
         local function Fire()
             local rootCFrame = self.character.PrimaryPart.CFrame
             local origin = rootCFrame.Position
-            local direction = rootCFrame.LookVector * self.curWeapon.Settings.Distance.Value
+            local direction = rootCFrame.LookVector
+
+            local projectile = Projectile.new(origin, direction * self.curWeapon.Settings.Speed.Value, self.curWeapon.Settings.Distance.Value, raycastParams)
 
             script.Fire:FireServer(origin, direction, tick())
 

@@ -4,6 +4,8 @@ local ServerScriptService = game:GetService("ServerScriptService")
 
 local HitboxHandler = require(ServerScriptService.HitboxHandler)
 
+local FireState = require(script.FireState)
+
 local Controller = ReplicatedStorage.Controllers.TDSController
 local Character = ReplicatedStorage.Characters.TDSCharacter
 
@@ -20,6 +22,8 @@ function TDSPlayer.new(player)
         character = nil,
 
         curWeapon = nil,
+
+        fireStates = {},
 
         connections = {},
         functions = {}
@@ -130,14 +134,10 @@ function TDSPlayer:Remotes()
         end
     end))
 
-    table.insert(self.connections, Character.Fire.OnServerEvent:Connect(function(player, origin, hit, hitPos, playerTick)
+    table.insert(self.connections, Character.Fire.OnServerEvent:Connect(function(player, origin, direction, fireID, playerTick)
         if player == self.player then
             if self.character and self.character:FindFirstChild("Humanoid") and self.character.Humanoid.Health > 0 then
-                if hit then
-                    for _, hitbox in ipairs(HitboxHandler:GetAllHitboxes(playerTick, self.character)) do
-                        
-                    end
-                end
+                self.fireStates[fireID] = FireState.new(origin, direction, fireID, playerTick)
             end
         end
     end))
