@@ -2,6 +2,8 @@ local PhysicsService = game:GetService("PhysicsService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
+local Debug = require(ReplicatedStorage.Debug)
+
 local HitboxHandler = require(ServerScriptService.HitboxHandler)
 
 local FireState = require(script.FireState)
@@ -134,10 +136,19 @@ function TDSPlayer:Remotes()
         end
     end))
 
-    table.insert(self.connections, Character.Fire.OnServerEvent:Connect(function(player, origin, direction, fireID, playerTick)
+    table.insert(self.connections, Character.Fire.OnServerEvent:Connect(function(player, direction, fireID, playerTick)
         if player == self.player then
             if self.character and self.character:FindFirstChild("Humanoid") and self.character.Humanoid.Health > 0 then
-                self.fireStates[fireID] = FireState.new(origin, direction, fireID, playerTick)
+                local origin = HitboxHandler:GetHitboxState(self.character, playerTick).Head.Position
+                self.fireStates[fireID] = FireState.new(origin, direction.Unit * self.curWeapon.Settings.Distance.Value, fireID, playerTick)
+            end
+        end
+    end))
+    table.insert(self.connections, Character.Hit.OnServerEvent:Connect(function(player, hit, hitPos, fireID, playerTick)
+        if player == self.player then
+            if hit and hit.Parent:FindFirstChildWhichIsA("Humanoid") then
+                local hitbox = HitboxHandler:GetHitbox(hit.Parent, playerTick)
+                
             end
         end
     end))

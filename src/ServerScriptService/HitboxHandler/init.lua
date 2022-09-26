@@ -50,18 +50,26 @@ function HitboxHandler:RemoveCharacter(character)
     end
 end
 
-function HitboxHandler:GetAllHitboxes(playerTick, ignoreCharacter)
-    local tickDiff = math.round((tick() - playerTick) / self.deltaTime)
-    local curTick = self.serverTick - tickDiff
-
-    local hitboxes = {}
+function HitboxHandler:GetHitboxState(targetCharacter, playerTick)
     for character, states in pairs(self.hitboxStates) do
-        if character ~= ignoreCharacter then
-            table.insert(hitboxes, MakeHitbox(states[curTick % MAX_STATES]))
+        if character == targetCharacter then
+            local tickDiff = math.round((tick() - playerTick) / self.deltaTime)
+            local curTick = self.serverTick - tickDiff
+            return states[curTick % MAX_STATES]
         end
     end
+    return nil
+end
 
-    return hitboxes
+function HitboxHandler:GetHitbox(targetCharacter, playerTick)
+    for character, states in pairs(self.hitboxStates) do
+        if character == targetCharacter then
+            local tickDiff = math.round((tick() - playerTick) / self.deltaTime)
+            local curTick = self.serverTick - tickDiff
+            return MakeHitbox(states[curTick % MAX_STATES])
+        end
+    end
+    return nil
 end
 
 return HitboxHandler.new()

@@ -19,6 +19,8 @@ function Projectile.new(args)
         mesh = nil,
         meshOffset = args.meshPos - args.origin,
 
+        Hit = Instance.new("BindableEvent")
+
         connections = {}
     }
     
@@ -33,7 +35,10 @@ function Projectile.new(args)
             if raycastResult then
                 Debug.Point(raycastResult.Position, Color3.new(0, 1, 0))
 
+                self.Hit:Fire(raycastResult)
+
                 self:Destroy()
+                return
             end
 
             local meshPos = self.position + self.meshOffset

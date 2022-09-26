@@ -1,9 +1,9 @@
 local FireState = {}
 
-function FireState.new(origin, direction, fireID, playerTick)
+function FireState.new(origin, velocity, fireID, playerTick)
     return {
         origin = origin,
-        direction = direction,
+        velocity = velocity,
         fireID = fireID,
         playerTick = playerTick
     }

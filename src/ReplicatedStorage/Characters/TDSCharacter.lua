@@ -17,6 +17,8 @@ function TDSCharacter.new(weapons, character)
         canFire = false,
         toFire = false,
 
+        fireID = 1,
+
         animations = {}
     }
 
@@ -115,17 +117,29 @@ function TDSCharacter:Fire(toFire)
         raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
 
         local function Fire()
+            local fireID = self.fireID
+            self.fireID += 1
+
+            local origin = rootCFrame.Position
+            local direction = rootCFrame.LookVector
+
             local rootCFrame = self.character.PrimaryPart.CFrame
             local projectile = Projectile.new({
-                origin = rootCFrame.Position,
-                velocity = rootCFrame.LookVector * self.curWeapon.Settings.Speed.Value,
+                origin = origin
+                velocity = direction * self.curWeapon.Settings.Speed.Value,
                 distance = self.curWeapon.Settings.Distance.Value,
                 raycastParams = raycastParams,
                 meshPrefab = self.curWeapon.Effects:FindFirstChild("Projectile"),
                 meshPos = self.curWeapon.PrimaryPart.Barrel.WorldPosition
             })
 
-            script.Fire:FireServer(origin, direction, tick())
+            script.Fire:FireServer(origin, direction, fireID, tick())
+
+            projectile.Hit.Event:Connect(function(raycastResult)
+                if raycastResult then
+                    script.Hit:FireServer(raycastResult.Instance, raycastResult.Position, fireID, tick())
+                end
+            end)
 
             wait(60/self.curWeapon.Settings.RPM.Value)
         end
