@@ -6,7 +6,6 @@ local FOV = 30
 local OFFSET = Vector3.new(0, 40, -10)
 local SPEED = 8
 
-local OBSCURE_TRANSPARENCY = 1
 local TWEEN_TIME = 0.25
 
 local TDSCamera = {}
@@ -56,27 +55,28 @@ end
 
 function TDSCamera:Update(deltaTime)
     if self.subject then
-        local obscuring = self.camera:GetPartsObscuringTarget({self.subject.Head.Position}, {self.subject})
+        local zoom = self.zoom
+        local targetPos = self.subject.PrimaryPart.Position
+
+        local obscuring = self.camera:GetPartsObscuringTarget({targetPos + Vector3.new(0, 2, 0), targetPos + Vector3.new(0, -3, 0)}, {self.subject})
         for _, part in ipairs(obscuring) do
             if part:FindFirstChild("Obscure") and not inTable(part, self.obscuring) then
                 table.insert(self.obscuring, part)
-                TweenService:Create(part, TweenInfo.new(TWEEN_TIME), {Transparency = OBSCURE_TRANSPARENCY}):Play()
+                TweenService:Create(part, TweenInfo.new(TWEEN_TIME), {Transparency = part.Obscure.Value.Y}):Play()
             end
         end
 
         for index, part in pairs(self.obscuring) do
             if not inTable(part, obscuring) then
-                TweenService:Create(part, TweenInfo.new(TWEEN_TIME), {Transparency = part.Obscure.Value}):Play()
+                TweenService:Create(part, TweenInfo.new(TWEEN_TIME), {Transparency = part.Obscure.Value.X}):Play()
                 table.remove(self.obscuring, index)
+            end
+
+            if part.Obscure.Value.Y >= 1 then
+                zoom = 1
             end
         end
 
-        local zoom = self.zoom
-        if #obscuring > 0 then
-            zoom = 1
-        end
-
-        local targetPos = self.subject.PrimaryPart.Position
         local targetCFrame = CFrame.new(targetPos + OFFSET * zoom, targetPos)
         self.camera.CFrame = self.camera.CFrame:Lerp(targetCFrame, deltaTime * SPEED)
     end
