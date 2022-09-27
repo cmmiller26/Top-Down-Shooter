@@ -19,7 +19,7 @@ function Projectile.new(args)
         mesh = nil,
         meshOffset = args.meshPos - args.origin,
 
-        Hit = Instance.new("BindableEvent")
+        Hit = Instance.new("BindableEvent"),
 
         connections = {}
     }

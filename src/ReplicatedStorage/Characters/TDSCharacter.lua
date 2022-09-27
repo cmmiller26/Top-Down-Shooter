@@ -120,12 +120,11 @@ function TDSCharacter:Fire(toFire)
             local fireID = self.fireID
             self.fireID += 1
 
-            local origin = rootCFrame.Position
+            local rootCFrame = self.character.PrimaryPart.CFrame
             local direction = rootCFrame.LookVector
 
-            local rootCFrame = self.character.PrimaryPart.CFrame
             local projectile = Projectile.new({
-                origin = origin
+                origin = rootCFrame.Position,
                 velocity = direction * self.curWeapon.Settings.Speed.Value,
                 distance = self.curWeapon.Settings.Distance.Value,
                 raycastParams = raycastParams,
@@ -133,7 +132,7 @@ function TDSCharacter:Fire(toFire)
                 meshPos = self.curWeapon.PrimaryPart.Barrel.WorldPosition
             })
 
-            script.Fire:FireServer(origin, direction, fireID, tick())
+            script.Fire:FireServer(direction, fireID, tick())
 
             projectile.Hit.Event:Connect(function(raycastResult)
                 if raycastResult then
