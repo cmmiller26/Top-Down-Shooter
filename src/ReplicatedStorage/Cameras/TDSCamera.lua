@@ -94,8 +94,10 @@ function TDSCamera:Update(deltaTime)
                 table.remove(self.obscuring, index)
             end
 
-            if part.Obscure.Value >= 1 then
-                zoom = 1
+            if part:FindFirstChild("Zoom") then
+                zoom = part.Zoom.Value
+            elseif zoom >= 2 then
+                zoom /= 2
             end
         end
 

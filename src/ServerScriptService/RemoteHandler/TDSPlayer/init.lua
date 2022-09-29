@@ -1,8 +1,8 @@
+local Debris = game:GetService("Debris")
 local PhysicsService = game:GetService("PhysicsService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local ServerScriptService = game:GetService("ServerScriptService")
-
-local Debug = require(ReplicatedStorage.Debug)
 
 local HitboxHandler = require(ServerScriptService.HitboxHandler)
 
@@ -140,15 +140,30 @@ function TDSPlayer:Remotes()
         if player == self.player then
             if self.character and self.character:FindFirstChild("Humanoid") and self.character.Humanoid.Health > 0 then
                 local origin = HitboxHandler:GetHitboxState(self.character, playerTick).Head.Position
-                self.fireStates[fireID] = FireState.new(origin, direction.Unit * self.curWeapon.Settings.Distance.Value, fireID, playerTick)
+                self.fireStates[fireID] = FireState.new(origin, direction.Unit * self.curWeapon.Settings.Distance.Value, playerTick)
             end
         end
     end))
-    table.insert(self.connections, Character.Hit.OnServerEvent:Connect(function(player, hit, hitPos, fireID, playerTick)
+    table.insert(self.connections, Character.Hit.OnServerEvent:Connect(function(player, hit, fireID, playerTick)
         if player == self.player then
             if hit and hit.Parent:FindFirstChildWhichIsA("Humanoid") then
-                local hitbox = HitboxHandler:GetHitbox(hit.Parent, playerTick)
-                
+                local fireState = self.fireStates[fireID]
+                if fireState then
+                    local hitbox = HitboxHandler:GetHitbox(hit.Parent, playerTick)
+                    hitbox.Parent = workspace
+
+                    local raycastParams = RaycastParams.new()
+                    raycastParams.CollisionGroup = "Hitbox"
+                    raycastParams.FilterDescendantsInstances = {hitbox}
+                    raycastParams.FilterType = Enum.RaycastFilterType.Whitelist
+
+                    local raycastResult = workspace:Raycast(fireState.origin, fireState.velocity, raycastParams)
+                    if raycastResult then
+                        print(raycastResult.Instance)
+                    end
+
+                    Debris:AddItem(hitbox, RunService.Heartbeat:Wait())
+                end
             end
         end
     end))

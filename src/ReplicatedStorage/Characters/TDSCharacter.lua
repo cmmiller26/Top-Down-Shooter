@@ -136,7 +136,7 @@ function TDSCharacter:Fire(toFire)
 
             projectile.Hit.Event:Connect(function(raycastResult)
                 if raycastResult then
-                    script.Hit:FireServer(raycastResult.Instance, raycastResult.Position, fireID, tick())
+                    script.Hit:FireServer(raycastResult.Instance, fireID, tick())
                 end
             end)
 
