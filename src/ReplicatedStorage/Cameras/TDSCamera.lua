@@ -53,26 +53,48 @@ function TDSCamera:ChangeSubject(subject)
     self.subject = subject
 end
 
+local function Raycast(origin, direction, results)
+    if not results then
+        results = {}
+    end
+
+    local raycastParams = RaycastParams.new()
+    raycastParams.CollisionGroup = "NoCollide"
+    raycastParams.FilterDescendantsInstances = results
+    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+
+    local raycastResult = workspace:Raycast(origin, direction, raycastParams)
+    if raycastResult then
+        table.insert(results, raycastResult.Instance)
+        return Raycast(origin, direction, results)
+    else
+        return results
+    end
+end
+
 function TDSCamera:Update(deltaTime)
     if self.subject then
         local zoom = self.zoom
         local targetPos = self.subject.PrimaryPart.Position
 
-        local obscuring = self.camera:GetPartsObscuringTarget({targetPos + Vector3.new(0, 2, 0), targetPos + Vector3.new(0, -3, 0)}, {self.subject})
+        local origin = self.camera.CFrame.Position
+        local direction = targetPos - origin
+
+        local obscuring = Raycast(origin, direction)
         for _, part in ipairs(obscuring) do
-            if part:FindFirstChild("Obscure") and not inTable(part, self.obscuring) then
+            if not inTable(part, self.obscuring) then
                 table.insert(self.obscuring, part)
-                TweenService:Create(part, TweenInfo.new(TWEEN_TIME), {Transparency = part.Obscure.Value.Y}):Play()
+                TweenService:Create(part, TweenInfo.new(TWEEN_TIME), {Transparency = part.Obscure.Value}):Play()
             end
         end
 
-        for index, part in pairs(self.obscuring) do
+        for index, part in ipairs(self.obscuring) do
             if not inTable(part, obscuring) then
-                TweenService:Create(part, TweenInfo.new(TWEEN_TIME), {Transparency = part.Obscure.Value.X}):Play()
+                TweenService:Create(part, TweenInfo.new(TWEEN_TIME), {Transparency = part.Default.Value}):Play()
                 table.remove(self.obscuring, index)
             end
 
-            if part.Obscure.Value.Y >= 1 then
+            if part.Obscure.Value >= 1 then
                 zoom = 1
             end
         end
