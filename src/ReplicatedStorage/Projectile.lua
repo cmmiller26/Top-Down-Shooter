@@ -33,7 +33,7 @@ function Projectile.new(args)
 
             local raycastResult = workspace:Raycast(self.position, direction, self.raycastParams)
             if raycastResult then
-                Debug.Point(raycastResult.Position, Color3.new(0, 1, 0))
+                Debug.Point(raycastResult.Position, Color3.new(0, 1, 1))
 
                 self.Hit:Fire(raycastResult)
 
@@ -44,7 +44,7 @@ function Projectile.new(args)
             local meshPos = self.position + self.meshOffset
             self.mesh.CFrame = CFrame.new(meshPos, meshPos + direction)
 
-            Debug.Point(self.position, Color3.new(1, 0, 0))
+            Debug.Point(self.position, Color3.new(0, 1, 1))
 
             self.position += direction
         else

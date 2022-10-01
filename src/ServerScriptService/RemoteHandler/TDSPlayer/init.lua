@@ -1,8 +1,9 @@
 local Debris = game:GetService("Debris")
 local PhysicsService = game:GetService("PhysicsService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 local ServerScriptService = game:GetService("ServerScriptService")
+
+local Debug = require(ReplicatedStorage.Debug)
 
 local HitboxHandler = require(ServerScriptService.HitboxHandler)
 
@@ -136,10 +137,10 @@ function TDSPlayer:Remotes()
         end
     end))
 
-    table.insert(self.connections, Character.Fire.OnServerEvent:Connect(function(player, direction, fireID, playerTick)
+    table.insert(self.connections, Character.Fire.OnServerEvent:Connect(function(player, origin, direction, fireID, playerTick)
         if player == self.player then
             if self.character and self.character:FindFirstChild("Humanoid") and self.character.Humanoid.Health > 0 then
-                local origin = HitboxHandler:GetHitboxState(self.character, playerTick).Head.Position
+                print((origin - self.character.PrimaryPart.Position).Magnitude)
                 self.fireStates[fireID] = FireState.new(origin, direction.Unit * self.curWeapon.Settings.Distance.Value, playerTick)
             end
         end
@@ -152,6 +153,8 @@ function TDSPlayer:Remotes()
                     local hitbox = HitboxHandler:GetHitbox(hit.Parent, playerTick)
                     hitbox.Parent = workspace
 
+                    repeat wait() until hitbox.Parent == workspace
+
                     local raycastParams = RaycastParams.new()
                     raycastParams.CollisionGroup = "Hitbox"
                     raycastParams.FilterDescendantsInstances = {hitbox}
@@ -159,10 +162,12 @@ function TDSPlayer:Remotes()
 
                     local raycastResult = workspace:Raycast(fireState.origin, fireState.velocity, raycastParams)
                     if raycastResult then
-                        print(raycastResult.Instance)
+                        Debug.Vector(fireState.origin, raycastResult.Position, Color3.new(0, 1, 0))
+                    else
+                        Debug.Vector(fireState.origin, fireState.origin + fireState.velocity, Color3.new(0, 1, 0))
                     end
 
-                    Debris:AddItem(hitbox, RunService.Heartbeat:Wait())
+                    Debris:AddItem(hitbox, 2)
                 end
             end
         end

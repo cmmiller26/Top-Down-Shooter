@@ -28,12 +28,12 @@ function HitboxHandler.new()
 end
 
 function HitboxHandler:Update(deltaTime)
+    self.deltaTime = deltaTime
+    self.serverTick += 1
+
     for _, character in ipairs(self.characters) do
         self.hitboxStates[character][self.serverTick % MAX_STATES] = HitboxState.new(character)
     end
-
-    self.deltaTime = deltaTime
-    self.serverTick += 1
 end
 
 function HitboxHandler:AddCharacter(character)
@@ -53,7 +53,7 @@ end
 function HitboxHandler:GetHitboxState(targetCharacter, playerTick)
     for character, states in pairs(self.hitboxStates) do
         if character == targetCharacter then
-            local tickDiff = math.round((tick() - playerTick) / self.deltaTime)
+            local tickDiff = math.max(0, math.round((tick() - playerTick) / self.deltaTime))
             local curTick = self.serverTick - tickDiff
             return states[curTick % MAX_STATES]
         end

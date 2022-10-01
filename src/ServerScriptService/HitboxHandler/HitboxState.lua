@@ -7,7 +7,8 @@ function HitboxState.new(character)
         ["Left Arm"] = character["Left Arm"].CFrame,
         ["Right Arm"] = character["Right Arm"].CFrame,
         ["Left Leg"] = character["Left Leg"].CFrame,
-        ["Right Leg"] = character["Right Leg"].CFrame
+        ["Right Leg"] = character["Right Leg"].CFrame,
+        ["HumanoidRootPart"] = character["HumanoidRootPart"].CFrame
     }
 end
 
