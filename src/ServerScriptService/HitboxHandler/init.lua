@@ -3,6 +3,8 @@ local RunService = game:GetService("RunService")
 local HitboxState = require(script.HitboxState)
 local MakeHitbox = require(script.MakeHitbox)
 
+local FIXED_DELTA_TIME = 1/60
+
 local MAX_STATES = 120
 
 local HitboxHandler = {}
@@ -14,8 +16,8 @@ function HitboxHandler.new()
 
         hitboxStates = {},
 
-        deltaTime = 0,
-        serverTick = 0,
+        accumulator = 0,
+        serverTick = 0
     }
 
     setmetatable(self, HitboxHandler)
@@ -28,11 +30,14 @@ function HitboxHandler.new()
 end
 
 function HitboxHandler:Update(deltaTime)
-    self.deltaTime = deltaTime
-    self.serverTick += 1
+    self.accumulator += deltaTime
+    while self.accumulator >= FIXED_DELTA_TIME do
+        self.serverTick += 1
+        for _, character in ipairs(self.characters) do
+            self.hitboxStates[character][self.serverTick % MAX_STATES] = HitboxState.new(character)
+        end
 
-    for _, character in ipairs(self.characters) do
-        self.hitboxStates[character][self.serverTick % MAX_STATES] = HitboxState.new(character)
+        self.accumulator -= FIXED_DELTA_TIME
     end
 end
 
@@ -53,7 +58,7 @@ end
 function HitboxHandler:GetHitboxState(targetCharacter, playerTick)
     for character, states in pairs(self.hitboxStates) do
         if character == targetCharacter then
-            local tickDiff = math.max(0, math.round((tick() - playerTick) / self.deltaTime))
+            local tickDiff = math.round((tick() - playerTick) / FIXED_DELTA_TIME)
             local curTick = self.serverTick - tickDiff
             return states[curTick % MAX_STATES]
         end
@@ -64,7 +69,7 @@ end
 function HitboxHandler:GetHitbox(targetCharacter, playerTick)
     for character, states in pairs(self.hitboxStates) do
         if character == targetCharacter then
-            local tickDiff = math.round((tick() - playerTick) / self.deltaTime)
+            local tickDiff = math.round((tick() - playerTick) / FIXED_DELTA_TIME)
             local curTick = self.serverTick - tickDiff
             return MakeHitbox(states[curTick % MAX_STATES])
         end

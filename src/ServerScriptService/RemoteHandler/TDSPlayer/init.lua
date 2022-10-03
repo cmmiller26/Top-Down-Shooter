@@ -138,14 +138,19 @@ function TDSPlayer:Remotes()
     end))
 
     table.insert(self.connections, Character.Fire.OnServerEvent:Connect(function(player, origin, direction, fireID, playerTick)
+        wait(0.11)
         if player == self.player then
             if self.character and self.character:FindFirstChild("Humanoid") and self.character.Humanoid.Health > 0 then
-                print((origin - self.character.PrimaryPart.Position).Magnitude)
-                self.fireStates[fireID] = FireState.new(origin, direction.Unit * self.curWeapon.Settings.Distance.Value, playerTick)
+                local moveDistance = (origin - self.character.PrimaryPart.Position).Magnitude
+                print(moveDistance, self.character.Humanoid.WalkSpeed * (tick() - playerTick))
+                if moveDistance <= self.character.Humanoid.WalkSpeed * (tick() - playerTick) then
+                    self.fireStates[fireID] = FireState.new(origin, direction.Unit * self.curWeapon.Settings.Distance.Value, playerTick)
+                end
             end
         end
     end))
     table.insert(self.connections, Character.Hit.OnServerEvent:Connect(function(player, hit, fireID, playerTick)
+        wait(0.11)
         if player == self.player then
             if hit and hit.Parent:FindFirstChildWhichIsA("Humanoid") then
                 local fireState = self.fireStates[fireID]
