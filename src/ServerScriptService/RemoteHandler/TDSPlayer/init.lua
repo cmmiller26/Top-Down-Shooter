@@ -14,7 +14,8 @@ local Character = ReplicatedStorage.Characters.TDSCharacter
 
 local GetPlayerWeapons = require(script.GetPlayerWeapons)
 
-local MAX_ORIGIN_DISTANCE = 3
+local ORIGIN_ERROR = 3
+local SPEED_ERROR = 1.25
 
 local TDSPlayer = {}
 TDSPlayer.__index = TDSPlayer
@@ -140,18 +141,16 @@ function TDSPlayer:Remotes()
     end))
 
     table.insert(self.connections, Character.Fire.OnServerEvent:Connect(function(player, origin, direction, fireID, playerTick)
-        wait(0.11)
         if player == self.player then
             if self.character and self.character:FindFirstChild("Humanoid") and self.character.Humanoid.Health > 0 then
                 local pastPos = HitboxHandler:GetHitboxState(self.character, playerTick).HumanoidRootPart.Position
-                if (origin - pastPos).Magnitude <= MAX_ORIGIN_DISTANCE then
-                    self.fireStates[fireID] = FireState.new(origin, direction.Unit * self.curWeapon.Settings.Distance.Value, playerTick)
+                if (origin - pastPos).Magnitude <= ORIGIN_ERROR then
+                    self.fireStates[fireID] = FireState.new(origin, direction.Unit * self.curWeapon.Settings.Distance.Value, self.curWeapon.Settings.Speed.Value, playerTick)
                 end
             end
         end
     end))
     table.insert(self.connections, Character.Hit.OnServerEvent:Connect(function(player, hit, fireID, playerTick)
-        wait(0.11)
         if player == self.player then
             if hit and hit.Parent:FindFirstChildWhichIsA("Humanoid") then
                 local fireState = self.fireStates[fireID]
@@ -166,11 +165,16 @@ function TDSPlayer:Remotes()
                     raycastParams.FilterDescendantsInstances = {hitbox}
                     raycastParams.FilterType = Enum.RaycastFilterType.Whitelist
 
-                    local raycastResult = workspace:Raycast(fireState.origin, fireState.velocity, raycastParams)
+                    local raycastResult = workspace:Raycast(fireState.origin, fireState.direction, raycastParams)
                     if raycastResult then
+                        local distance = (raycastResult.Position - fireState.origin).Magnitude
+                        if distance / fireState.speed <= (playerTick - fireState.playerTick) * SPEED_ERROR then
+                            print("Hit Valid")
+                        end
+
                         Debug.Vector(fireState.origin, raycastResult.Position, Color3.new(0, 1, 0))
                     else
-                        Debug.Vector(fireState.origin, fireState.origin + fireState.velocity, Color3.new(0, 1, 0))
+                        Debug.Vector(fireState.origin, fireState.origin + fireState.direction, Color3.new(0, 1, 0))
                     end
 
                     Debris:AddItem(hitbox, 2)
