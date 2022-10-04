@@ -52,7 +52,11 @@ function TDSPlayer.new(player)
 
     self:Remotes()
 
-    self.player:LoadCharacter()
+    -- REMOVE LATER: Spawn character
+    spawn(function()
+        wait(1)
+        self.player:LoadCharacter()
+    end)
 
     return self
 end
@@ -72,6 +76,11 @@ function TDSPlayer:CharacterAdded(character)
     self.character.PrimaryPart.CanTouch = false
 
     self.character:WaitForChild("Humanoid").BreakJointsOnDeath = false
+    self.character.Humanoid.Died:Connect(function()
+        -- REMOVE LATER: Respawn
+        wait(5)
+        self.player:LoadCharacter()
+    end)
 
     local attach = Instance.new("Motor6D")
     attach.Name = "Attach"

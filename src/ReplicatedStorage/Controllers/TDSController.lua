@@ -25,15 +25,15 @@ function TDSController.new(player, camera)
 
     setmetatable(self, TDSController)
 
+    script.Connect:FireServer()
+    self.weapons = script.GetWeapons:InvokeServer()
+
     table.insert(self.connections, self.player.CharacterAdded:Connect(function(character)
         self:CharacterAdded(character)
     end))
     table.insert(self.connections, self.player.CharacterRemoving:Connect(function()
         self:CharacterRemoving()
     end))
-
-    script.Connect:FireServer()
-    self.weapons = script.GetWeapons:InvokeServer()
 
     return self
 end
