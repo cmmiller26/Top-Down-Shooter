@@ -1,9 +1,6 @@
-local Debris = game:GetService("Debris")
 local PhysicsService = game:GetService("PhysicsService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
-
-local Debug = require(ReplicatedStorage.Debug)
 
 local HitboxHandler = require(ServerScriptService.HitboxHandler)
 
@@ -15,7 +12,7 @@ local Character = ReplicatedStorage.Characters.TDSCharacter
 local GetPlayerWeapons = require(script.GetPlayerWeapons)
 
 local ORIGIN_ERROR = 3
-local SPEED_ERROR = 1.25
+local SPEED_ERROR = 1.5
 
 local TDSPlayer = {}
 TDSPlayer.__index = TDSPlayer
@@ -53,11 +50,9 @@ function TDSPlayer.new(player)
         self:CharacterRemoving()
     end))
 
-    if self.player.Character then
-        self:CharacterAdded(self.player.Character)
-    end
-
     self:Remotes()
+
+    self.player:LoadCharacter()
 
     return self
 end
@@ -75,6 +70,8 @@ function TDSPlayer:CharacterAdded(character)
     self.character.PrimaryPart = self.character:WaitForChild("HumanoidRootPart")
     self.character.PrimaryPart.CanQuery = false
     self.character.PrimaryPart.CanTouch = false
+
+    self.character:WaitForChild("Humanoid").BreakJointsOnDeath = false
 
     local attach = Instance.new("Motor6D")
     attach.Name = "Attach"
@@ -107,6 +104,11 @@ function TDSPlayer:CharacterAdded(character)
 end
 function TDSPlayer:CharacterRemoving()
     HitboxHandler:RemoveCharacter(self.character)
+
+    for _, weapon in ipairs(self.weapons) do
+        weapon.Parent = self.player.Weapons
+        weapon.Holster.Part1 = nil
+    end
 
     self.character = nil
 end
@@ -145,7 +147,13 @@ function TDSPlayer:Remotes()
             if self.character and self.character:FindFirstChild("Humanoid") and self.character.Humanoid.Health > 0 then
                 local pastPos = HitboxHandler:GetHitboxState(self.character, playerTick).HumanoidRootPart.Position
                 if (origin - pastPos).Magnitude <= ORIGIN_ERROR then
-                    self.fireStates[fireID] = FireState.new(origin, direction.Unit * self.curWeapon.Settings.Distance.Value, self.curWeapon.Settings.Speed.Value, playerTick)
+                    self.fireStates[fireID] = FireState.new(
+                        origin,
+                        direction.Unit * self.curWeapon.Settings.Distance.Value,
+                        self.curWeapon.Settings.Speed.Value,
+                        self.curWeapon.Settings.Damage.Value,
+                        playerTick
+                    )
                 end
             end
         end
@@ -169,15 +177,11 @@ function TDSPlayer:Remotes()
                     if raycastResult then
                         local distance = (raycastResult.Position - fireState.origin).Magnitude
                         if distance / fireState.speed <= (playerTick - fireState.playerTick) * SPEED_ERROR then
-                            print("Hit Valid")
+                            hit.Parent.Humanoid:TakeDamage(fireState.damage)
                         end
-
-                        Debug.Vector(fireState.origin, raycastResult.Position, Color3.new(0, 1, 0))
-                    else
-                        Debug.Vector(fireState.origin, fireState.origin + fireState.direction, Color3.new(0, 1, 0))
                     end
 
-                    Debris:AddItem(hitbox, 2)
+                    hitbox:Destroy()
                 end
             end
         end
