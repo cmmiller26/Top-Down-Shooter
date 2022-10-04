@@ -14,6 +14,8 @@ local Character = ReplicatedStorage.Characters.TDSCharacter
 
 local GetPlayerWeapons = require(script.GetPlayerWeapons)
 
+local MAX_ORIGIN_DISTANCE = 3
+
 local TDSPlayer = {}
 TDSPlayer.__index = TDSPlayer
 
@@ -141,9 +143,8 @@ function TDSPlayer:Remotes()
         wait(0.11)
         if player == self.player then
             if self.character and self.character:FindFirstChild("Humanoid") and self.character.Humanoid.Health > 0 then
-                local moveDistance = (origin - self.character.PrimaryPart.Position).Magnitude
-                print(moveDistance, self.character.Humanoid.WalkSpeed * (tick() - playerTick))
-                if moveDistance <= self.character.Humanoid.WalkSpeed * (tick() - playerTick) then
+                local pastPos = HitboxHandler:GetHitboxState(self.character, playerTick).HumanoidRootPart.Position
+                if (origin - pastPos).Magnitude <= MAX_ORIGIN_DISTANCE then
                     self.fireStates[fireID] = FireState.new(origin, direction.Unit * self.curWeapon.Settings.Distance.Value, playerTick)
                 end
             end
