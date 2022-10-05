@@ -1,4 +1,5 @@
 local PhysicsService = game:GetService("PhysicsService")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
@@ -163,6 +164,22 @@ function TDSPlayer:Remotes()
                         self.curWeapon.Settings.Damage.Value,
                         playerTick
                     )
+
+                    local raycastParams = RaycastParams.new()
+                    raycastParams.FilterDescendantsInstances = {self.character}
+                    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+                    for _, otherPlayer in ipairs(Players:GetPlayers()) do
+                        if otherPlayer ~= self.player then
+                            Character.Fire:FireClient(otherPlayer, {
+                                origin = origin,
+                                velocity = direction.Unit * self.curWeapon.Settings.Distance.Value,
+                                distance = self.curWeapon.Settings.Distance.Value,
+                                raycastParams = raycastParams,
+                                meshPrefab = self.curWeapon.Effects.Projectile.Value,
+                                meshPos = self.curWeapon.PrimaryPart.Barrel.WorldPosition
+                            })
+                        end
+                    end
                 end
             end
         end

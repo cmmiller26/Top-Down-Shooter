@@ -1,9 +1,13 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Characters = ReplicatedStorage.Characters
+
 local TDSCamera = require(ReplicatedStorage.Cameras.TDSCamera)
 
-local MoveCharacter = require(ReplicatedStorage.Characters.MoveCharacter)
-local TDSCharacter = require(ReplicatedStorage.Characters.TDSCharacter)
+local MoveCharacter = require(Characters.MoveCharacter)
+local TDSCharacter = require(Characters.TDSCharacter)
+
+local Projectile = require(ReplicatedStorage.Projectile)
 
 local TDSController = {}
 TDSController.__index = TDSController
@@ -34,6 +38,8 @@ function TDSController.new(player, camera)
     table.insert(self.connections, self.player.CharacterRemoving:Connect(function()
         self:CharacterRemoving()
     end))
+
+    self:Remotes()
 
     return self
 end
@@ -71,6 +77,12 @@ function TDSController:Died()
         character:Destroy()
     end
     self.characters = {}
+end
+
+function TDSController:Remotes()
+    table.insert(self.connections, Characters.TDSCharacter.Fire.OnClientEvent:Connect(function(args)
+        Projectile.new(args)
+    end))
 end
 
 return TDSController

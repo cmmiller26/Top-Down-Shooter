@@ -25,6 +25,7 @@ function Projectile.new(args)
     }
     
     self.mesh = args.meshPrefab:Clone()
+    self.mesh.CFrame = CFrame.new(self.position, self.position + self.velocity)
     self.mesh.Parent = workspace.Bullets
 
     table.insert(self.connections, RunService.Heartbeat:Connect(function(deltaTime)
