@@ -123,7 +123,7 @@ function TDSCharacter:Fire(toFire)
             local rootCFrame = self.character.PrimaryPart.CFrame
             local origin = rootCFrame.Position
             local direction = rootCFrame.LookVector
-
+            
             local projectile = Projectile.new({
                 origin = origin,
                 velocity = direction * self.curWeapon.Settings.Speed.Value,
