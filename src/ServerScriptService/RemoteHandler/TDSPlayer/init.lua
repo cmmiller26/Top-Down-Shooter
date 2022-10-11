@@ -93,6 +93,11 @@ function TDSPlayer:CharacterAdded(character)
         weapon.Parent = self.character
     end
 
+    local projectileSpawn = Instance.new("Attachment")
+    projectileSpawn.Name = "ProjectileSpawn"
+    projectileSpawn.Position = Vector3.new(0, 0.5, 0)
+    projectileSpawn.Parent = self.character.PrimaryPart
+
     spawn(function()
         if not self.player:HasAppearanceLoaded() then
             self.player.CharacterAppearanceLoaded:Wait()
@@ -155,7 +160,9 @@ function TDSPlayer:Remotes()
     table.insert(self.connections, Character.Fire.OnServerEvent:Connect(function(player, origin, direction, fireID, playerTick)
         if player == self.player then
             if self.character and self.character:FindFirstChild("Humanoid") and self.character.Humanoid.Health > 0 then
-                local pastPos = HitboxHandler:GetHitboxState(self.character, playerTick).HumanoidRootPart.Position
+                local rootCFrame = HitboxHandler:GetHitboxState(self.character, playerTick).HumanoidRootPart
+                local projectileOffset = self.character.PrimaryPart.ProjectileSpawn.Position
+                local pastPos = rootCFrame:PointToWorldSpace(projectileOffset)
                 if (origin - pastPos).Magnitude <= ORIGIN_ERROR then
                     self.fireStates[fireID] = FireState.new(
                         origin,
