@@ -20,13 +20,14 @@ function Projectile.new(args)
 
         Hit = Instance.new("BindableEvent"),
 
-        connections = {}
+        connection = nil,
     }
     
     self.mesh = args.meshPrefab:Clone()
     self.mesh.Parent = workspace.Bullets
+    print(self.mesh, self.mesh.Parent)
 
-    table.insert(self.connections, RunService.Heartbeat:Connect(function(deltaTime)
+    self.connection = RunService.Heartbeat:Connect(function(deltaTime)
         if (self.position - self.origin).Magnitude < self.distance then
             local direction = self.velocity * deltaTime
 
@@ -47,12 +48,10 @@ function Projectile.new(args)
         else
             self:Destroy()
         end
-    end))
+    end)
 
     function self:Destroy()
-        for _, connection in ipairs(self.connections) do
-            connection:Disconnect()
-        end
+        self.connection:Disconnect()
 
         self.mesh:Destroy()
     end
