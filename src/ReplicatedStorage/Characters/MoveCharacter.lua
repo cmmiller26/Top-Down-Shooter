@@ -19,7 +19,7 @@ function MoveCharacter.new(mouse, character)
         character = character,
         humanoid = character:WaitForChild("Humanoid"),
 
-        connections = {}
+        connection = nil
     }
     
     setmetatable(self, MoveCharacter)
@@ -31,16 +31,14 @@ function MoveCharacter.new(mouse, character)
     end
     self.humanoid.AutoRotate = false
 
-    table.insert(self.connections, RunService.Heartbeat:Connect(function()
+    self.connection = RunService.Heartbeat:Connect(function()
         self:Update()
-    end))
+    end)
 
     return self
 end
 function MoveCharacter:Destroy()
-    for _, connection in ipairs(self.connections) do
-        connection:Disconnect()
-    end
+    self.connection:Disconnect()
 end
 
 function MoveCharacter:Update()

@@ -3,7 +3,7 @@ local Debris = game:GetService("Debris")
 local LIFETIME = 2
 
 local Debug = {
-    enabled = true
+    enabled = false
 }
 
 function Debug.Point(position, color)
