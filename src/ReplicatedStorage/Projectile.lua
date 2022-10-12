@@ -25,9 +25,8 @@ function Projectile.new(args)
     
     self.mesh = args.meshPrefab:Clone()
     self.mesh.Parent = workspace.Bullets
-    print(self.mesh, self.mesh.Parent)
 
-    table.insert(self.connections, RunService.Heartbeat:Connect(function(deltaTime)
+   self.connection = RunService.Heartbeat:Connect(function(deltaTime)
         if (self.position - self.origin).Magnitude < self.distance then
             local direction = self.velocity * deltaTime
 

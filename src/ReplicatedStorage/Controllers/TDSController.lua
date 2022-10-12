@@ -81,7 +81,6 @@ end
 
 function TDSController:Remotes()
     table.insert(self.connections, Characters.TDSCharacter.Fire.OnClientEvent:Connect(function(args)
-        print(args)
         Projectile.new(args)
     end))
 end
