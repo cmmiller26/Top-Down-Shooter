@@ -25,15 +25,15 @@ function Projectile.new(args)
     
     self.mesh = args.meshPrefab:Clone()
     self.mesh.Parent = workspace.Bullets
-
-   self.connection = RunService.Heartbeat:Connect(function(deltaTime)
+    
+    self.connection = RunService.Heartbeat:Connect(function(deltaTime)
         if (self.position - self.origin).Magnitude < self.distance then
             local direction = self.velocity * deltaTime
 
             local raycastResult = workspace:Raycast(self.position, direction, self.raycastParams)
             if raycastResult then
                 Debug.Point(raycastResult.Position, Color3.new(1, 0, 0))
-
+                
                 self.Hit:Fire(raycastResult)
 
                 self:Destroy()

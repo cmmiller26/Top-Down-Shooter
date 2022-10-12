@@ -15,9 +15,12 @@ local Character = ReplicatedStorage.Characters.TDSCharacter
 
 local GetPlayerWeapons = require(script.GetPlayerWeapons)
 
+local HitboxCharacter = ReplicatedStorage.HitboxCharacter
+
 local PROJECTILE_OFFSET = 0.5
 
 local ORIGIN_ERROR = 5
+local HIT_POS_ERROR = 1
 local SPEED_ERROR = 2
 
 local TDSPlayer = {}
@@ -167,6 +170,7 @@ function TDSPlayer:Remotes()
             if self.character and self.character:FindFirstChild("Humanoid") and self.character.Humanoid.Health > 0 then
                 local pastPos = self.character.PrimaryPart.Position + Vector3.new(0, PROJECTILE_OFFSET, 0)
                 Debug.Vector(origin, pastPos, Color3.new(0, 0, 1))
+                print((origin - pastPos).Magnitude)
                 if (origin - pastPos).Magnitude <= ORIGIN_ERROR then
                     self.fireStates[fireID] = FireState.new(
                         origin,
@@ -181,6 +185,7 @@ function TDSPlayer:Remotes()
                     raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
                     for _, otherPlayer in ipairs(Players:GetPlayers()) do
                         if otherPlayer ~= self.player then
+                            print("Bullet Replicated")
                             Character.Fire:FireClient(otherPlayer, {
                                 origin = origin,
                                 velocity = direction.Unit * self.curWeapon.Settings.Distance.Value,
@@ -195,17 +200,18 @@ function TDSPlayer:Remotes()
             end
         end
     end))
-    table.insert(self.connections, Character.Hit.OnServerEvent:Connect(function(player, hit, fireID, playerTick)
-        wait(0.5)
+    table.insert(self.connections, Character.Hit.OnServerEvent:Connect(function(player, hit, hitCFrame, fireID, playerTick)
         if player == self.player then
             if hit and hit.Parent:FindFirstChildWhichIsA("Humanoid") then
                 local fireState = self.fireStates[fireID]
-                if fireState then
-                    local hitbox = HitboxHandler:GetHitbox(hit.Parent, playerTick)
-                    if hitbox then
-                        repeat
-                            hitbox.Parent = workspace
-                        until hitbox.Parent == workspace
+                local hitboxState = HitboxHandler:GetHitboxState(hit.Parent, playerTick)
+                if fireState and hitboxState and hitboxState[hit.Name] then
+                    local serverCFrame = hitboxState[hit.Name]
+                    if (hitCFrame.Position - serverCFrame.Position).Magnitude <= HIT_POS_ERROR then
+                        local hitbox = HitboxCharacter:FindFirstChild(hit.Name):Clone()
+                        hitbox.CFrame = hitCFrame
+                        hitbox.Parent = workspace
+                        repeat wait() until hitbox.Parent == workspace
 
                         local raycastParams = RaycastParams.new()
                         raycastParams.CollisionGroup = "Hitbox"

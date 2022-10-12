@@ -130,12 +130,13 @@ function TDSCharacter:Fire(toFire)
                 meshPrefab = self.curWeapon.Effects.Projectile.Value,
                 meshPos = self.curWeapon.PrimaryPart.Barrel.WorldPosition
             })
-
+            
             script.Fire:FireServer(origin, direction, fireID, tick())
 
             projectile.Hit.Event:Connect(function(raycastResult)
                 if raycastResult then
-                    script.Hit:FireServer(raycastResult.Instance, fireID, tick())
+                    local hit = raycastResult.Instance
+                    script.Hit:FireServer(hit, hit.CFrame, fireID, tick())
                 end
             end)
 

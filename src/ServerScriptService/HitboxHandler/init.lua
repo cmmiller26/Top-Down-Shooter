@@ -1,7 +1,6 @@
 local RunService = game:GetService("RunService")
 
 local HitboxState = require(script.HitboxState)
-local MakeHitbox = require(script.MakeHitbox)
 
 local FIXED_DELTA_TIME = 1/60
 
@@ -61,17 +60,6 @@ function HitboxHandler:GetHitboxState(targetCharacter, playerTick)
             local tickDiff = math.round((tick() - playerTick) / FIXED_DELTA_TIME)
             local curTick = self.serverTick - tickDiff
             return states[curTick % MAX_STATES]
-        end
-    end
-    return nil
-end
-
-function HitboxHandler:GetHitbox(targetCharacter, playerTick)
-    for character, states in pairs(self.hitboxStates) do
-        if character == targetCharacter then
-            local tickDiff = math.round((tick() - playerTick) / FIXED_DELTA_TIME)
-            local curTick = self.serverTick - tickDiff
-            return MakeHitbox(states[curTick % MAX_STATES])
         end
     end
     return nil
