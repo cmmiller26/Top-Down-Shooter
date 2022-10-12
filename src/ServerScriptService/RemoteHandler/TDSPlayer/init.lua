@@ -1,7 +1,10 @@
+local Debris = game:GetService("Debris")
 local PhysicsService = game:GetService("PhysicsService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
+
+local Debug = require(ReplicatedStorage.Debug)
 
 local HitboxHandler = require(ServerScriptService.HitboxHandler)
 
@@ -12,8 +15,10 @@ local Character = ReplicatedStorage.Characters.TDSCharacter
 
 local GetPlayerWeapons = require(script.GetPlayerWeapons)
 
-local ORIGIN_ERROR = 3
-local SPEED_ERROR = 1.5
+local PROJECTILE_OFFSET = 0.5
+
+local ORIGIN_ERROR = 5
+local SPEED_ERROR = 2
 
 local TDSPlayer = {}
 TDSPlayer.__index = TDSPlayer
@@ -93,6 +98,11 @@ function TDSPlayer:CharacterAdded(character)
         weapon.Parent = self.character
     end
 
+    local projectileSpawn = Instance.new("Attachment")
+    projectileSpawn.Name = "ProjectileSpawn"
+    projectileSpawn.Position = Vector3.new(0, PROJECTILE_OFFSET, 0)
+    projectileSpawn.Parent = self.character.PrimaryPart
+
     spawn(function()
         if not self.player:HasAppearanceLoaded() then
             self.player.CharacterAppearanceLoaded:Wait()
@@ -155,7 +165,8 @@ function TDSPlayer:Remotes()
     table.insert(self.connections, Character.Fire.OnServerEvent:Connect(function(player, origin, direction, fireID, playerTick)
         if player == self.player then
             if self.character and self.character:FindFirstChild("Humanoid") and self.character.Humanoid.Health > 0 then
-                local pastPos = HitboxHandler:GetHitboxState(self.character, playerTick).HumanoidRootPart.Position
+                local pastPos = self.character.PrimaryPart.Position + Vector3.new(0, PROJECTILE_OFFSET, 0)
+                Debug.Vector(origin, pastPos, Color3.new(0, 0, 1))
                 if (origin - pastPos).Magnitude <= ORIGIN_ERROR then
                     self.fireStates[fireID] = FireState.new(
                         origin,
@@ -185,29 +196,34 @@ function TDSPlayer:Remotes()
         end
     end))
     table.insert(self.connections, Character.Hit.OnServerEvent:Connect(function(player, hit, fireID, playerTick)
+        wait(0.5)
         if player == self.player then
             if hit and hit.Parent:FindFirstChildWhichIsA("Humanoid") then
                 local fireState = self.fireStates[fireID]
                 if fireState then
                     local hitbox = HitboxHandler:GetHitbox(hit.Parent, playerTick)
-                    hitbox.Parent = workspace
+                    if hitbox then
+                        repeat
+                            hitbox.Parent = workspace
+                        until hitbox.Parent == workspace
 
-                    repeat wait() until hitbox.Parent == workspace
+                        local raycastParams = RaycastParams.new()
+                        raycastParams.CollisionGroup = "Hitbox"
+                        raycastParams.FilterDescendantsInstances = {hitbox}
+                        raycastParams.FilterType = Enum.RaycastFilterType.Whitelist
 
-                    local raycastParams = RaycastParams.new()
-                    raycastParams.CollisionGroup = "Hitbox"
-                    raycastParams.FilterDescendantsInstances = {hitbox}
-                    raycastParams.FilterType = Enum.RaycastFilterType.Whitelist
-
-                    local raycastResult = workspace:Raycast(fireState.origin, fireState.direction, raycastParams)
-                    if raycastResult then
-                        local distance = (raycastResult.Position - fireState.origin).Magnitude
-                        if distance / fireState.speed <= (playerTick - fireState.playerTick) * SPEED_ERROR then
-                            hit.Parent.Humanoid:TakeDamage(fireState.damage)
+                        local raycastResult = workspace:Raycast(fireState.origin, fireState.direction, raycastParams)
+                        if raycastResult then
+                            Debug.Vector(fireState.origin, raycastResult.Position, Color3.new(0, 1, 1))
+                            local distance = (raycastResult.Position - fireState.origin).Magnitude
+                            if distance / fireState.speed <= (playerTick - fireState.playerTick) * SPEED_ERROR then
+                                hit.Parent.Humanoid:TakeDamage(fireState.damage)
+                            end
                         end
-                    end
 
-                    hitbox:Destroy()
+                        Debris:AddItem(hitbox, 2)
+                        --hitbox:Destroy()
+                    end
                 end
             end
         end

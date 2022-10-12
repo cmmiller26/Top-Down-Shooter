@@ -19,9 +19,6 @@ function Projectile.new(args)
         raycastParams = args.raycastParams,
 
         mesh = nil,
-        meshOffset = args.meshPos - args.origin,
-
-        predictPos = args.origin,
 
         Hit = Instance.new("BindableEvent"),
 
@@ -29,13 +26,7 @@ function Projectile.new(args)
     }
     
     self.mesh = args.meshPrefab:Clone()
-    self.mesh.CFrame = CFrame.new(self.position, self.position + self.velocity)
     self.mesh.Parent = workspace.Bullets
-
-    local raycastResult = workspace:Raycast(self.origin, self.velocity.Unit * self.distance, self.raycastParams)
-    if raycastResult then
-        self.predictPos = raycastResult.Instance
-    end
 
     table.insert(self.connections, RunService.Heartbeat:Connect(function(deltaTime)
         if (self.position - self.origin).Magnitude < self.distance then
@@ -43,7 +34,7 @@ function Projectile.new(args)
 
             local raycastResult = workspace:Raycast(self.position, direction, self.raycastParams)
             if raycastResult then
-                Debug.Point(raycastResult.Position, Color3.new(0, 0, 1))
+                Debug.Point(raycastResult.Position, Color3.new(1, 0, 0))
 
                 self.Hit:Fire(raycastResult)
 
@@ -51,12 +42,10 @@ function Projectile.new(args)
                 return
             end
 
-            local meshPos = self.position + self.meshOffset
-            self.mesh.CFrame = CFrame.new(meshPos, meshPos + direction)
-
-            Debug.Point(self.position, Color3.new(0, 1, 1))
+            Debug.Point(self.position, Color3.new(0, 1, 0))
 
             self.position += direction
+            self.mesh:SetPrimaryPartCFrame(CFrame.new(self.position, self.position + direction))
         else
             self:Destroy()
         end
