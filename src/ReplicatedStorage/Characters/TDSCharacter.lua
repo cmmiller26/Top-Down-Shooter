@@ -127,8 +127,7 @@ function TDSCharacter:Fire(toFire)
                 velocity = direction * self.curWeapon.Settings.Speed.Value,
                 distance = self.curWeapon.Settings.Distance.Value,
                 raycastParams = raycastParams,
-                meshPrefab = self.curWeapon.Effects.Projectile.Value,
-                meshPos = self.curWeapon.PrimaryPart.Barrel.WorldPosition
+                meshPrefab = self.curWeapon.Effects.Projectile.Value
             })
             
             script.Fire:FireServer(origin, direction, fireID, tick())

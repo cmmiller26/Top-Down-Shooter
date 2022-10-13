@@ -59,6 +59,19 @@ function TDSPlayer.new(player)
         self:CharacterRemoving()
     end))
 
+    table.insert(self.connections, self.player.CharacterAppearanceLoaded:Connect(function(character)
+        for _, accessory in ipairs(character:GetChildren()) do
+            if accessory:IsA("Accessory") then
+                local part = accessory:FindFirstChildWhichIsA("BasePart")
+                if part then
+                    part.CanQuery = false
+                    part.CanTouch = false
+                    PhysicsService:SetPartCollisionGroup(part, "NoCollide")
+                end
+            end
+        end
+    end))
+
     self:Remotes()
 
     -- REMOVE LATER: Spawn character
@@ -106,23 +119,6 @@ function TDSPlayer:CharacterAdded(character)
     projectileSpawn.Position = Vector3.new(0, PROJECTILE_OFFSET, 0)
     projectileSpawn.Parent = self.character.PrimaryPart
 
-    spawn(function()
-        if not self.player:HasAppearanceLoaded() then
-            self.player.CharacterAppearanceLoaded:Wait()
-        end
-
-        for _, accessory in ipairs(self.character:GetChildren()) do
-            if accessory:IsA("Accessory") then
-                local part = accessory:FindFirstChildWhichIsA("BasePart")
-                if part then
-                    part.CanQuery = false
-                    part.CanTouch = false
-                    PhysicsService:SetPartCollisionGroup(part, "NoCollide")
-                end
-            end
-        end
-    end)
-
     HitboxHandler:AddCharacter(self.character)
 end
 function TDSPlayer:CharacterRemoving()
@@ -168,9 +164,8 @@ function TDSPlayer:Remotes()
     table.insert(self.connections, Character.Fire.OnServerEvent:Connect(function(player, origin, direction, fireID, playerTick)
         if player == self.player then
             if self.character and self.character:FindFirstChild("Humanoid") and self.character.Humanoid.Health > 0 then
-                local pastPos = self.character.PrimaryPart.Position + Vector3.new(0, PROJECTILE_OFFSET, 0)
+                local pastPos = self.character.PrimaryPart.ProjectileSpawn.WorldPosition
                 Debug.Vector(origin, pastPos, Color3.new(0, 0, 1))
-                print((origin - pastPos).Magnitude)
                 if (origin - pastPos).Magnitude <= ORIGIN_ERROR then
                     self.fireStates[fireID] = FireState.new(
                         origin,
@@ -180,20 +175,15 @@ function TDSPlayer:Remotes()
                         playerTick
                     )
 
-                    local raycastParams = RaycastParams.new()
-                    raycastParams.FilterDescendantsInstances = {self.character}
-                    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
                     for _, otherPlayer in ipairs(Players:GetPlayers()) do
                         if otherPlayer ~= self.player then
-                            print("Bullet Replicated")
-                            Character.Fire:FireClient(otherPlayer, {
-                                origin = origin,
-                                velocity = direction.Unit * self.curWeapon.Settings.Distance.Value,
-                                distance = self.curWeapon.Settings.Distance.Value,
-                                raycastParams = raycastParams,
-                                meshPrefab = self.curWeapon.Effects.Projectile.Value,
-                                meshPos = self.curWeapon.PrimaryPart.Barrel.WorldPosition
-                            })
+                            Character.Fire:FireClient(
+                                otherPlayer,
+                                self.character,
+                                direction.Unit * self.curWeapon.Settings.Distance.Value,
+                                self.curWeapon.Settings.Distance.Value,
+                                self.curWeapon.Effects.Projectile.Value
+                            )
                         end
                     end
                 end
@@ -206,11 +196,18 @@ function TDSPlayer:Remotes()
                 local fireState = self.fireStates[fireID]
                 local hitboxState = HitboxHandler:GetHitboxState(hit.Parent, playerTick)
                 if fireState and hitboxState and hitboxState[hit.Name] then
+                    local hitbox = HitboxCharacter:FindFirstChild(hit.Name):Clone()
+                    hitbox.CFrame = hitCFrame
+                    hitbox.Parent = workspace
+
                     local serverCFrame = hitboxState[hit.Name]
+                    Debug.Point(serverCFrame.Position, Color3.new(0, 0, 1))
                     if (hitCFrame.Position - serverCFrame.Position).Magnitude <= HIT_POS_ERROR then
+                        --[[
                         local hitbox = HitboxCharacter:FindFirstChild(hit.Name):Clone()
                         hitbox.CFrame = hitCFrame
                         hitbox.Parent = workspace
+                        ]]
                         repeat wait() until hitbox.Parent == workspace
 
                         local raycastParams = RaycastParams.new()
@@ -227,9 +224,9 @@ function TDSPlayer:Remotes()
                             end
                         end
 
-                        Debris:AddItem(hitbox, 2)
                         --hitbox:Destroy()
                     end
+                    Debris:AddItem(hitbox, 2)
                 end
             end
         end
