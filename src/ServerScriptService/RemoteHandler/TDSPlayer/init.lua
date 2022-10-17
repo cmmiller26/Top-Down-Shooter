@@ -4,6 +4,8 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
+local PingTimes = require(ReplicatedStorage.PingTimes)
+
 local Debug = require(ReplicatedStorage.Debug)
 
 local HitboxHandler = require(ServerScriptService.HitboxHandler)
@@ -19,8 +21,8 @@ local HitboxCharacter = ReplicatedStorage.HitboxCharacter
 
 local PROJECTILE_OFFSET = 0.5
 
-local ORIGIN_ERROR = 5
-local HIT_POS_ERROR = 1
+local ORIGIN_ERROR = 4
+local HIT_POS_ERROR = 1.5
 local SPEED_ERROR = 2
 
 local TDSPlayer = {}
@@ -161,7 +163,7 @@ function TDSPlayer:Remotes()
         end
     end))
 
-    table.insert(self.connections, Character.Fire.OnServerEvent:Connect(function(player, origin, direction, fireID, playerTick)
+    table.insert(self.connections, Character.Fire.OnServerEvent:Connect(function(player, origin, direction, fireID)
         if player == self.player then
             if self.character and self.character:FindFirstChild("Humanoid") and self.character.Humanoid.Health > 0 then
                 local pastPos = self.character.PrimaryPart.ProjectileSpawn.WorldPosition
@@ -171,8 +173,7 @@ function TDSPlayer:Remotes()
                         origin,
                         direction.Unit * self.curWeapon.Settings.Distance.Value,
                         self.curWeapon.Settings.Speed.Value,
-                        self.curWeapon.Settings.Damage.Value,
-                        playerTick
+                        self.curWeapon.Settings.Damage.Value
                     )
 
                     for _, otherPlayer in ipairs(Players:GetPlayers()) do
@@ -190,24 +191,18 @@ function TDSPlayer:Remotes()
             end
         end
     end))
-    table.insert(self.connections, Character.Hit.OnServerEvent:Connect(function(player, hit, hitCFrame, fireID, playerTick)
+    table.insert(self.connections, Character.Hit.OnServerEvent:Connect(function(player, hit, hitCFrame, fireID)
         if player == self.player then
             if hit and hit.Parent:FindFirstChildWhichIsA("Humanoid") then
                 local fireState = self.fireStates[fireID]
-                local hitboxState = HitboxHandler:GetHitboxState(hit.Parent, playerTick)
+                local hitboxState = HitboxHandler:GetHitboxState(hit.Parent, PingTimes[player])
                 if fireState and hitboxState and hitboxState[hit.Name] then
-                    local hitbox = HitboxCharacter:FindFirstChild(hit.Name):Clone()
-                    hitbox.CFrame = hitCFrame
-                    hitbox.Parent = workspace
-
                     local serverCFrame = hitboxState[hit.Name]
-                    Debug.Point(serverCFrame.Position, Color3.new(0, 0, 1))
+                    Debug.Vector(serverCFrame.Position, hitCFrame.Position, Color3.new(1, 0, 1))
                     if (hitCFrame.Position - serverCFrame.Position).Magnitude <= HIT_POS_ERROR then
-                        --[[
                         local hitbox = HitboxCharacter:FindFirstChild(hit.Name):Clone()
                         hitbox.CFrame = hitCFrame
                         hitbox.Parent = workspace
-                        ]]
                         repeat wait() until hitbox.Parent == workspace
 
                         local raycastParams = RaycastParams.new()
@@ -219,14 +214,17 @@ function TDSPlayer:Remotes()
                         if raycastResult then
                             Debug.Vector(fireState.origin, raycastResult.Position, Color3.new(0, 1, 1))
                             local distance = (raycastResult.Position - fireState.origin).Magnitude
-                            if distance / fireState.speed <= (playerTick - fireState.playerTick) * SPEED_ERROR then
+                            if distance / fireState.speed <= (tick() - fireState.serverTick) * SPEED_ERROR then
                                 hit.Parent.Humanoid:TakeDamage(fireState.damage)
                             end
                         end
 
-                        --hitbox:Destroy()
+                        if Debug.enabled then
+                            Debris:AddItem(hitbox, Debug.lifetime)
+                        else
+                            hitbox:Destroy()
+                        end
                     end
-                    Debris:AddItem(hitbox, 2)
                 end
             end
         end
