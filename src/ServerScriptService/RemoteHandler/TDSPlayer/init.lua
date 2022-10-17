@@ -21,9 +21,9 @@ local HitboxCharacter = ReplicatedStorage.HitboxCharacter
 
 local PROJECTILE_OFFSET = 0.5
 
-local ORIGIN_ERROR = 4
-local HIT_POS_ERROR = 1.5
-local SPEED_ERROR = 2
+local ORIGIN_ERROR = 3
+local HIT_POS_ERROR = 1
+local SPEED_ERROR = 1.75
 
 local TDSPlayer = {}
 TDSPlayer.__index = TDSPlayer
@@ -201,6 +201,7 @@ function TDSPlayer:Remotes()
                     Debug.Vector(serverCFrame.Position, hitCFrame.Position, Color3.new(1, 0, 1))
                     if (hitCFrame.Position - serverCFrame.Position).Magnitude <= HIT_POS_ERROR then
                         local hitbox = HitboxCharacter:FindFirstChild(hit.Name):Clone()
+                        hitbox.Transparency = Debug.enabled and 0 or 1
                         hitbox.CFrame = hitCFrame
                         hitbox.Parent = workspace
                         repeat wait() until hitbox.Parent == workspace
