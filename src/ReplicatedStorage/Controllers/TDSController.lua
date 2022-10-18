@@ -7,7 +7,7 @@ local TDSCamera = require(ReplicatedStorage.Cameras.TDSCamera)
 local MoveCharacter = require(Characters.MoveCharacter)
 local TDSCharacter = require(Characters.TDSCharacter)
 
-local Projectile = require(ReplicatedStorage.Projectile)
+local Projectile = require(ReplicatedStorage.Modules.Projectile)
 
 local TDSController = {}
 TDSController.__index = TDSController

@@ -1,7 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-local Debug = require(ReplicatedStorage.Debug)
+local Debug = require(ReplicatedStorage.Modules.Debug)
 
 local Projectile = {}
 

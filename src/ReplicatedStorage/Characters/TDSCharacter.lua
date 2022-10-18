@@ -1,7 +1,7 @@
 local ContextActionService = game:GetService("ContextActionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Projectile = require(ReplicatedStorage.Projectile)
+local Projectile = require(ReplicatedStorage.Modules.Projectile)
 
 local TDSCharacter = {}
 TDSCharacter.__index = TDSCharacter

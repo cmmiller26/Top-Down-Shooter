@@ -4,9 +4,9 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
-local PingTimes = require(ReplicatedStorage.PingTimes)
+local PingTimes = require(ReplicatedStorage.Modules.PingTimes)
 
-local Debug = require(ReplicatedStorage.Debug)
+local Debug = require(ReplicatedStorage.Modules.Debug)
 
 local HitboxHandler = require(ServerScriptService.HitboxHandler)
 
