@@ -21,7 +21,6 @@ function TDSController.new(player, camera)
         weapons = {},
 
         characters = {},
-
         alive = false,
 
         connections = {}

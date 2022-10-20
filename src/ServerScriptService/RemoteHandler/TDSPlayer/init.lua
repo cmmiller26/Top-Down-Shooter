@@ -4,7 +4,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
-local PingTimes = require(ReplicatedStorage.Modules.PingTimes)
+local PingTimes = require(ReplicatedStorage.PingTimes)
 
 local Debug = require(ReplicatedStorage.Modules.Debug)
 
@@ -34,6 +34,7 @@ function TDSPlayer.new(player)
         weapons = nil,
 
         character = nil,
+        alive = false,
 
         curWeapon = nil,
 
@@ -101,10 +102,9 @@ function TDSPlayer:CharacterAdded(character)
 
     self.character:WaitForChild("Humanoid").BreakJointsOnDeath = false
     self.character.Humanoid.Died:Connect(function()
-        -- REMOVE LATER: Respawn
-        wait(5)
-        self.player:LoadCharacter()
+        self:Died()
     end)
+    self.alive = true
 
     local attach = Instance.new("Motor6D")
     attach.Name = "Attach"
@@ -124,7 +124,9 @@ function TDSPlayer:CharacterAdded(character)
     HitboxHandler:AddCharacter(self.character)
 end
 function TDSPlayer:CharacterRemoving()
-    HitboxHandler:RemoveCharacter(self.character)
+    if self.alive then
+        self:Died()
+    end
 
     for _, weapon in ipairs(self.weapons) do
         weapon.Parent = self.player.Weapons
@@ -132,6 +134,18 @@ function TDSPlayer:CharacterRemoving()
     end
 
     self.character = nil
+end
+
+function TDSPlayer:Died()
+    self.alive = false
+
+    HitboxHandler:RemoveCharacter(self.character)
+
+    -- REMOVE LATER: Respawn
+    spawn(function()
+        wait(5)
+        self.player:LoadCharacter()
+    end)
 end
 
 function TDSPlayer:Remotes()
@@ -153,7 +167,7 @@ function TDSPlayer:Remotes()
     end))
     table.insert(self.connections, Character.Equip.OnServerEvent:Connect(function(player, weapon)
         if player == self.player then
-            if self.character and self.character:FindFirstChild("Humanoid") and self.character.Humanoid.Health > 0 then
+            if self.character and self.alive then
                 if weapon and weapon.Parent == self.character then
                     self.curWeapon = weapon
                     self.character.Torso.Attach.Part1 = self.curWeapon.PrimaryPart
@@ -165,7 +179,7 @@ function TDSPlayer:Remotes()
 
     table.insert(self.connections, Character.Fire.OnServerEvent:Connect(function(player, origin, direction, fireID)
         if player == self.player then
-            if self.character and self.character:FindFirstChild("Humanoid") and self.character.Humanoid.Health > 0 then
+            if self.character and self.alive then
                 local pastPos = self.character.PrimaryPart.ProjectileSpawn.WorldPosition
                 Debug.Vector(origin, pastPos, Color3.new(0, 0, 1))
                 if (origin - pastPos).Magnitude <= ORIGIN_ERROR then

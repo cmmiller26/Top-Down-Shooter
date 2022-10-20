@@ -1,7 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-local Input = require(ReplicatedStorage.Input)
+local Input = require(ReplicatedStorage.Modules.Input)
 
 local VALID_STATES = {
     [Enum.HumanoidStateType.Running] = true,

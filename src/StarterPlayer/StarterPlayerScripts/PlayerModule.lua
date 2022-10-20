@@ -1,7 +1,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-require(ReplicatedStorage.Modules.PingTimes)
+require(ReplicatedStorage.PingTimes)
 
 local TDSController = require(ReplicatedStorage.Controllers.TDSController)
 
