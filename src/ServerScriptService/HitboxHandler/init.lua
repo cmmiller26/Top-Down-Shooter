@@ -6,6 +6,8 @@ local FIXED_DELTA_TIME = 1/60
 
 local MAX_STATES = 120
 
+local TICK_BUFFER = 7
+
 local HitboxHandler = {}
 HitboxHandler.__index = HitboxHandler
 
@@ -57,7 +59,7 @@ end
 function HitboxHandler:GetHitboxState(targetCharacter, ping)
     for character, states in pairs(self.hitboxStates) do
         if character == targetCharacter then
-            local tickDiff = math.round(ping / FIXED_DELTA_TIME)
+            local tickDiff = math.round(ping / FIXED_DELTA_TIME) + TICK_BUFFER
             local curTick = self.serverTick - tickDiff
             return states[curTick % MAX_STATES]
         end

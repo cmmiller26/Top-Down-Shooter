@@ -22,7 +22,7 @@ local HitboxCharacter = ReplicatedStorage.HitboxCharacter
 local PROJECTILE_OFFSET = 0.5
 
 local ORIGIN_ERROR = 3
-local HIT_POS_ERROR = 1
+local HIT_POS_ERROR = 1.5
 local SPEED_ERROR = 1.75
 
 local TDSPlayer = {}

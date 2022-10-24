@@ -7,13 +7,14 @@ local RESPAWN_TIME = 5
 local Dummy = {}
 Dummy.__index = Dummy
 
-function Dummy.new(cframe, parent)
+function Dummy.new(cframe, parent, moveTargets)
     local self = {
         character = nil,
 
         origin = cframe,
+        parent = parent,
 
-        parent = parent
+        moveTargets = moveTargets
     }
 
     setmetatable(self, Dummy)
@@ -28,7 +29,10 @@ function Dummy:LoadCharacter()
     self.character:SetPrimaryPartCFrame(self.origin)
     self.character.Parent = self.parent
 
+    local alive = true
     self.character.Humanoid.Died:Connect(function()
+        alive = false
+
         HitboxHandler:RemoveCharacter(self.character)
 
         wait(RESPAWN_TIME)
@@ -38,6 +42,22 @@ function Dummy:LoadCharacter()
     end)
 
     HitboxHandler:AddCharacter(self.character)
+
+    for _, part in ipairs(self.character:GetChildren()) do
+        if part:IsA("BasePart") then
+            part:SetNetworkOwner(nil)
+        end
+    end
+
+    local stepper = 1
+    if #self.moveTargets > 1 then
+        while alive do
+            self.character.Humanoid:MoveTo(self.moveTargets[stepper % #self.moveTargets + 1])
+            self.character.Humanoid.MoveToFinished:Wait()
+
+            stepper += 1
+        end
+    end
 end
 
 return Dummy
