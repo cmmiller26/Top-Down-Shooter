@@ -6,7 +6,7 @@ local FIXED_DELTA_TIME = 1/60
 
 local MAX_STATES = 120
 
-local TICK_BUFFER = 7
+local TICK_BUFFER = math.round(0.1 / FIXED_DELTA_TIME)
 
 local HitboxHandler = {}
 HitboxHandler.__index = HitboxHandler
