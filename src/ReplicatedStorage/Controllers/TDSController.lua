@@ -18,8 +18,6 @@ function TDSController.new(player, camera)
         mouse = player:GetMouse(),
         camera = TDSCamera.new(camera),
 
-        weapons = {},
-
         characters = {},
         alive = false,
 
@@ -29,7 +27,6 @@ function TDSController.new(player, camera)
     setmetatable(self, TDSController)
 
     script.Connect:FireServer()
-    self.weapons = script.GetWeapons:InvokeServer()
 
     table.insert(self.connections, self.player.CharacterAdded:Connect(function(character)
         self:CharacterAdded(character)
@@ -54,7 +51,7 @@ end
 
 function TDSController:CharacterAdded(character)
     table.insert(self.characters, MoveCharacter.new(self.mouse, character))
-    table.insert(self.characters, TDSCharacter.new(self.weapons, character))
+    table.insert(self.characters, TDSCharacter.new(character))
 
     TDSCamera:ChangeSubject(character)
 

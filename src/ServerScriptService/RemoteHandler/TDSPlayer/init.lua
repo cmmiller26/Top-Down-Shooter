@@ -12,10 +12,7 @@ local HitboxHandler = require(ServerScriptService.HitboxHandler)
 
 local FireState = require(script.FireState)
 
-local Controller = ReplicatedStorage.Controllers.TDSController
-local Character = ReplicatedStorage.Characters.TDSCharacter
-
-local GetPlayerWeapons = require(script.GetPlayerWeapons)
+local Remotes = ReplicatedStorage.Characters.TDSCharacter
 
 local HitboxCharacter = ReplicatedStorage.HitboxCharacter
 
@@ -31,7 +28,7 @@ TDSPlayer.__index = TDSPlayer
 function TDSPlayer.new(player)
     local self = {
         player = player,
-        weapons = nil,
+        weapons = {},
 
         character = nil,
         alive = false,
@@ -49,11 +46,6 @@ function TDSPlayer.new(player)
     local weapons = Instance.new("Folder")
     weapons.Name = "Weapons"
     weapons.Parent = self.player
-
-    self.weapons = GetPlayerWeapons(self.player)
-    for _, weapon in ipairs(self.weapons) do
-        weapon.Parent = weapons
-    end
 
     table.insert(self.connections, self.player.CharacterAdded:Connect(function(character)
         self:CharacterAdded(character)
@@ -149,14 +141,7 @@ function TDSPlayer:Died()
 end
 
 function TDSPlayer:Remotes()
-    table.insert(self.functions, Controller.GetWeapons)
-    Controller.GetWeapons.OnServerInvoke = function(player)
-        if player == self.player then
-            return self.weapons
-        end
-    end
-
-    table.insert(self.connections, Character.Unequip.OnServerEvent:Connect(function(player)
+    table.insert(self.connections, Remotes.Unequip.OnServerEvent:Connect(function(player)
         if player == self.player then
             if self.curWeapon and self.character then
                 self.curWeapon.Holster.Enabled = true
@@ -165,7 +150,7 @@ function TDSPlayer:Remotes()
             end
         end
     end))
-    table.insert(self.connections, Character.Equip.OnServerEvent:Connect(function(player, weapon)
+    table.insert(self.connections, Remotes.Equip.OnServerEvent:Connect(function(player, weapon)
         if player == self.player then
             if self.character and self.alive then
                 if weapon and weapon.Parent == self.character then
@@ -177,7 +162,7 @@ function TDSPlayer:Remotes()
         end
     end))
 
-    table.insert(self.connections, Character.Fire.OnServerEvent:Connect(function(player, origin, direction, fireID)
+    table.insert(self.connections, Remotes.Fire.OnServerEvent:Connect(function(player, origin, direction, fireID)
         if player == self.player then
             if self.character and self.alive then
                 local pastPos = self.character.PrimaryPart.ProjectileSpawn.WorldPosition
@@ -192,7 +177,7 @@ function TDSPlayer:Remotes()
 
                     for _, otherPlayer in ipairs(Players:GetPlayers()) do
                         if otherPlayer ~= self.player then
-                            Character.Fire:FireClient(
+                            Remotes.Fire:FireClient(
                                 otherPlayer,
                                 self.character,
                                 direction.Unit * self.curWeapon.Settings.Distance.Value,
@@ -205,7 +190,7 @@ function TDSPlayer:Remotes()
             end
         end
     end))
-    table.insert(self.connections, Character.Hit.OnServerEvent:Connect(function(player, hit, hitCFrame, fireID)
+    table.insert(self.connections, Remotes.Hit.OnServerEvent:Connect(function(player, hit, hitCFrame, fireID)
         if player == self.player then
             if hit and hit.Parent:FindFirstChildWhichIsA("Humanoid") then
                 local fireState = self.fireStates[fireID]

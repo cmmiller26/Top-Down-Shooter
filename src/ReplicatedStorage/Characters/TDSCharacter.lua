@@ -6,11 +6,11 @@ local Projectile = require(ReplicatedStorage.Modules.Projectile)
 local TDSCharacter = {}
 TDSCharacter.__index = TDSCharacter
 
-function TDSCharacter.new(weapons, character)
+function TDSCharacter.new(character)
     local self = {
         character = character,
 
-        weapons = weapons,
+        weapons = {},
         curWeapon = nil,
 
         isFiring = false,
@@ -19,14 +19,20 @@ function TDSCharacter.new(weapons, character)
 
         fireID = 1,
 
-        animations = {}
+        animations = {},
+        connection = nil
     }
 
     setmetatable(self, TDSCharacter)
 
-    for _, weapon in ipairs(self.weapons) do
-        self.animations[weapon] = self.character.Humanoid.Animator:LoadAnimation(weapon.Idle)
-    end
+    self.connection = self.character.Humanoid.Touched:Connect(function(otherPart)
+        if otherPart.Name == "Collider" then
+            local itemValue = otherPart.Parent:FindFirstChild("Item")
+            if itemValue then
+                print(itemValue.Value)
+            end
+        end
+    end)
 
     self:BindActions()
 
@@ -152,6 +158,13 @@ function TDSCharacter:Fire(toFire)
             self.canFire = true
         until not self.toFire
     end
+end
+
+function TDSCharacter:AddWeapon(weapon)
+    self.animations[weapon] = self.character.Humanoid.Animator:LoadAnimation(weapon.Idle)
+end
+function TDSCharacter:RemoveWeapon(weapon)
+    self.animations[weapon] = nil
 end
 
 return TDSCharacter
