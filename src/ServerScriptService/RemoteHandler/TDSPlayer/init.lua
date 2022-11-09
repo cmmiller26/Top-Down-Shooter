@@ -55,9 +55,11 @@ function TDSPlayer.new(player)
     end))
 
     table.insert(self.connections, self.player.CharacterAppearanceLoaded:Connect(function(character)
-        for _, accessory in ipairs(character:GetChildren()) do
-            if accessory:IsA("Accessory") then
-                local part = accessory:FindFirstChildWhichIsA("BasePart")
+        for _, child in ipairs(character:GetChildren()) do
+            if child:IsA("BasePart") then
+                PhysicsService:SetPartCollisionGroup(child, "Player")
+            elseif child:IsA("Accessory") then
+                local part = child:FindFirstChildWhichIsA("BasePart")
                 if part then
                     part.CanQuery = false
                     part.CanTouch = false
