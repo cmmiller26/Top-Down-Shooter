@@ -20,25 +20,49 @@ function TDSCharacter.new(character)
         fireID = 1,
 
         animations = {},
-        connection = nil
+
+        itemPart = nil,
+        curItem = nil,
+
+        connections = {}
     }
 
     setmetatable(self, TDSCharacter)
 
-    self.connection = self.character.Humanoid.Touched:Connect(function(otherPart)
+    self:BindActions()
+
+    self.itemPart = script.ItemPart:Clone()
+    self.itemPart.Weld.Part0 = self.character.HumanoidRootPart
+    self.itemPart.Parent = self.character
+
+    table.insert(self.connections, self.itemPart.Touched:Connect(function(otherPart)
         if otherPart.Name == "Collider" then
-            local itemValue = otherPart.Parent:FindFirstChild("Item")
-            if itemValue then
-                print(itemValue.Value)
+            local item = otherPart.Parent
+            if item:FindFirstChild("Item") then
+                if item ~= self.curItem then
+                    self.curItem = item
+                end
             end
         end
-    end)
-
-    self:BindActions()
+    end))
+    table.insert(self.connections, self.itemPart.TouchEnded:Connect(function(otherPart)
+        if otherPart.Name == "Collider" then
+            local item = otherPart.Parent
+            if item:FindFirstChild("Item") then
+                if item == self.curItem then
+                    self.curItem = nil
+                end
+            end
+        end
+    end))
 
     return self
 end
 function TDSCharacter:Destroy()
+    for _, connection in ipairs(self.connections) do
+        connection:Disconnect()
+    end
+
     self:UnbindActions()
     self:Unequip()
 end
