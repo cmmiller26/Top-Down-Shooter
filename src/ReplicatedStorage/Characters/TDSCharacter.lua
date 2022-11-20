@@ -6,35 +6,36 @@ local Projectile = require(ReplicatedStorage.Modules.Projectile)
 local TDSCharacter = {}
 TDSCharacter.__index = TDSCharacter
 
-function TDSCharacter.new(character)
+function TDSCharacter.new(gui, character)
     local self = {
+        gui = gui,
+
         character = character,
 
         weapons = {},
         curWeapon = nil,
 
+        animations = {},
+
+        interactPart = nil,
+        curItem = nil,
+
         isFiring = false,
         canFire = false,
         toFire = false,
 
-        fireID = 1,
-
-        animations = {},
-
-        itemPart = nil,
-        curItem = nil
+        fireID = 1
     }
 
     setmetatable(self, TDSCharacter)
 
     self:BindActions()
-
-    self:CreateItemPart()
+    self:CreateInteractPart()
 
     return self
 end
 function TDSCharacter:Destroy()
-    self.itemPart:Destroy()
+    self.interactPart:Destroy()
     self:UnbindActions()
     self:Unequip()
 end
@@ -62,6 +63,13 @@ function TDSCharacter:BindActions()
         end
     end
     ContextActionService:BindAction("TDSFire", onFire, false, Enum.UserInputType.MouseButton1)
+
+    local function onInteract(_, inputState)
+        if inputState == Enum.UserInputState.Begin then
+            self:Interact()
+        end
+    end
+    ContextActionService:BindAction("TDSInteract", onInteract, false, Enum.KeyCode.F)
 end
 function TDSCharacter:UnbindActions()
     ContextActionService:UnbindAction("TDSFire")
@@ -71,32 +79,43 @@ function TDSCharacter:UnbindActions()
     end
 end
 
-function TDSCharacter:CreateItemPart()
-    self.itemPart = script.ItemPart:Clone()
-    self.itemPart.Weld.Part0 = self.character.HumanoidRootPart
-    self.itemPart.Parent = self.character
+function TDSCharacter:CreateInteractPart()
+    self.interactPart = script.InteractPart:Clone()
+    self.interactPart.Weld.Part0 = self.character.HumanoidRootPart
+    self.interactPart.Parent = self.character
 
-    self.itemPart.Touched:Connect(function(otherPart)
+    self.interactPart.Touched:Connect(function(otherPart)
         if otherPart.Name == "Collider" then
             local item = otherPart.Parent
             if item:FindFirstChild("Item") then
                 if item ~= self.curItem then
                     self.curItem = item
+
+                    self.gui.Pickup.Label.Text = "Pickup " .. self.curItem.Name
+                    self.gui.Pickup.Visible = true
                 end
             end
         end
     end)
 
-    self.itemPart.TouchEnded:Connect(function(otherPart)
+    self.interactPart.TouchEnded:Connect(function(otherPart)
         if otherPart.Name == "Collider" then
             local item = otherPart.Parent
             if item:FindFirstChild("Item") then
                 if item == self.curItem then
+                    self.gui.Pickup.Visible = false
+                    self.gui.Pickup.Label.Text = ""
+
                     self.curItem = nil
                 end
             end
         end
     end)
+end
+function TDSCharacter:Interact()
+    if self.curItem then
+        
+    end
 end
 
 function TDSCharacter:AddWeapon(weapon)
@@ -115,7 +134,7 @@ function TDSCharacter:Unequip()
         self.curWeapon.Holster.Enabled = true
         self.character.Torso.Attach.Part1 = nil
 
-        script.Unequip:FireServer()
+        script.Remotes.Unequip:FireServer()
 
         self.curWeapon = nil
         self.canFire = false
@@ -129,7 +148,7 @@ function TDSCharacter:Equip(slot)
             self:Unequip()
 
             self.curWeapon = weapon
-            script.Equip:FireServer(self.curWeapon)
+            script.Remotes.Equip:FireServer(self.curWeapon)
 
             self.character.Torso.Attach.Part1 = self.curWeapon.PrimaryPart
             self.curWeapon.Holster.Enabled = false
@@ -167,12 +186,12 @@ function TDSCharacter:Fire(toFire)
                 meshPrefab = self.curWeapon.Effects.Projectile.Value
             })
             
-            script.Fire:FireServer(origin, direction, fireID, tick())
+            script.Remotes.Fire:FireServer(origin, direction, fireID, tick())
 
             projectile.Hit.Event:Connect(function(raycastResult)
                 if raycastResult then
                     local hit = raycastResult.Instance
-                    script.Hit:FireServer(hit, hit.CFrame, fireID, tick())
+                    script.Remotes.Hit:FireServer(hit, hit.CFrame, fireID, tick())
                 end
             end)
 

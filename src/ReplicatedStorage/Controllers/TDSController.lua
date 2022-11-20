@@ -18,6 +18,8 @@ function TDSController.new(player, camera)
         mouse = player:GetMouse(),
         camera = TDSCamera.new(camera),
 
+        gui = nil,
+
         characters = {},
         alive = false,
 
@@ -27,6 +29,9 @@ function TDSController.new(player, camera)
     setmetatable(self, TDSController)
 
     script.Connect:FireServer()
+
+    self.gui = script.ScreenGui:Clone()
+    self.gui.Parent = self.player.PlayerGui
 
     table.insert(self.connections, self.player.CharacterAdded:Connect(function(character)
         self:CharacterAdded(character)
@@ -44,6 +49,8 @@ function TDSController:Destroy()
         connection:Disconnect()
     end
 
+    self.gui:Destroy()
+
     if next(self.characters) then
         self:Died()
     end
@@ -51,7 +58,7 @@ end
 
 function TDSController:CharacterAdded(character)
     table.insert(self.characters, MoveCharacter.new(self.mouse, character))
-    table.insert(self.characters, TDSCharacter.new(character))
+    table.insert(self.characters, TDSCharacter.new(self.gui, character))
 
     TDSCamera:ChangeSubject(character)
 
@@ -76,7 +83,7 @@ function TDSController:Died()
 end
 
 function TDSController:Remotes()
-    table.insert(self.connections, Characters.TDSCharacter.Fire.OnClientEvent:Connect(function(otherCharacter, velocity, distance, meshPrefab)
+    table.insert(self.connections, Characters.TDSCharacter.Remotes.Fire.OnClientEvent:Connect(function(otherCharacter, velocity, distance, meshPrefab)
         local raycastParams = RaycastParams.new()
         raycastParams.FilterDescendantsInstances = {otherCharacter}
         raycastParams.FilterType = Enum.RaycastFilterType.Blacklist

@@ -12,7 +12,7 @@ local HitboxHandler = require(ServerScriptService.HitboxHandler)
 
 local FireState = require(script.FireState)
 
-local Remotes = ReplicatedStorage.Characters.TDSCharacter
+local Remotes = ReplicatedStorage.Characters.TDSCharacter.Remotes
 
 local HitboxCharacter = ReplicatedStorage.HitboxCharacter
 
