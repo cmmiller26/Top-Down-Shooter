@@ -101,7 +101,7 @@ function TDSCharacter:CreateInteractPart()
     self.interactPart.TouchEnded:Connect(function(otherPart)
         if otherPart.Name == "Collider" then
             local item = otherPart.Parent
-            if item:FindFirstChild("Item") then
+            if item and item:FindFirstChild("Item") then
                 if item == self.curItem then
                     self.gui.Pickup.Visible = false
                     self.gui.Pickup.Label.Text = ""
@@ -114,7 +114,13 @@ function TDSCharacter:CreateInteractPart()
 end
 function TDSCharacter:Interact()
     if self.curItem then
-        
+        script.Remotes.Pickup:FireServer(self.curItem)
+
+        self.gui.Pickup.Visible = false
+        self.gui.Pickup.Label.Text = ""
+
+        self.curItem:Destroy()
+        self.curItem = nil
     end
 end
 

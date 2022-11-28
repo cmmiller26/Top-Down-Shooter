@@ -28,7 +28,7 @@ function TDSController.new(player, camera)
 
     setmetatable(self, TDSController)
 
-    script.Connect:FireServer()
+    script.Remotes.Connect:FireServer()
 
     self.gui = script.ScreenGui:Clone()
     self.gui.Parent = self.player.PlayerGui
@@ -83,7 +83,7 @@ function TDSController:Died()
 end
 
 function TDSController:Remotes()
-    table.insert(self.connections, Characters.TDSCharacter.Remotes.Fire.OnClientEvent:Connect(function(otherCharacter, velocity, distance, meshPrefab)
+    table.insert(self.connections, script.Remotes.ReplicateFire.OnClientEvent:Connect(function(otherCharacter, velocity, distance, meshPrefab)
         local raycastParams = RaycastParams.new()
         raycastParams.FilterDescendantsInstances = {otherCharacter}
         raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
@@ -94,6 +94,10 @@ function TDSController:Remotes()
             raycastParams = raycastParams,
             meshPrefab = meshPrefab
         })
+    end))
+
+    table.insert(self.connections, script.Remotes.AddWeapon.OnClientEvent:Connect(function(weapon)
+        
     end))
 end
 

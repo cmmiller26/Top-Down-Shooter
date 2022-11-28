@@ -5,16 +5,17 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local PingTimes = require(ReplicatedStorage.PingTimes)
-
 local Debug = require(ReplicatedStorage.Modules.Debug)
 
 local HitboxHandler = require(ServerScriptService.HitboxHandler)
-
 local FireState = require(script.FireState)
 
-local Remotes = ReplicatedStorage.Characters.TDSCharacter.Remotes
+local ControllerRemotes = ReplicatedStorage.Controllers.TDSController.Remotes
+local CharacterRemotes = ReplicatedStorage.Characters.TDSCharacter.Remotes
 
 local HitboxCharacter = ReplicatedStorage.HitboxCharacter
+
+local MAX_PICKUP_DISTANCE = 5
 
 local PROJECTILE_OFFSET = 0.5
 
@@ -37,8 +38,7 @@ function TDSPlayer.new(player)
 
         fireStates = {},
 
-        connections = {},
-        functions = {}
+        connections = {}
     }
 
     setmetatable(self, TDSPlayer)
@@ -82,9 +82,6 @@ end
 function TDSPlayer:Destroy()
     for _, connection in ipairs(self.connections) do
         connection:Disconnect()
-    end
-    for _, fnction in ipairs(self.functions) do
-        fnction.OnServerInvoke = nil
     end
 end
 
@@ -143,7 +140,7 @@ function TDSPlayer:Died()
 end
 
 function TDSPlayer:Remotes()
-    table.insert(self.connections, Remotes.Unequip.OnServerEvent:Connect(function(player)
+    table.insert(self.connections, CharacterRemotes.Unequip.OnServerEvent:Connect(function(player)
         if player == self.player then
             if self.curWeapon and self.character then
                 self.curWeapon.Holster.Enabled = true
@@ -152,7 +149,7 @@ function TDSPlayer:Remotes()
             end
         end
     end))
-    table.insert(self.connections, Remotes.Equip.OnServerEvent:Connect(function(player, weapon)
+    table.insert(self.connections, CharacterRemotes.Equip.OnServerEvent:Connect(function(player, weapon)
         if player == self.player then
             if self.character and self.alive then
                 if weapon and weapon.Parent == self.character then
@@ -164,7 +161,21 @@ function TDSPlayer:Remotes()
         end
     end))
 
-    table.insert(self.connections, Remotes.Fire.OnServerEvent:Connect(function(player, origin, direction, fireID)
+    table.insert(self.connections, CharacterRemotes.Pickup.OnServerEvent:Connect(function(player, item)
+        if player == self.player then
+            if self.character and self.alive then
+                local itemValue = item:FindFirstChild("Item")
+                if item and itemValue then
+                    if (item.PrimaryPart.Position - self.character.PrimaryPart.Position).Magnitude <= MAX_PICKUP_DISTANCE then
+                        print(itemValue.Value)
+                        item:Destroy()
+                    end
+                end
+            end
+        end
+    end))
+
+    table.insert(self.connections, CharacterRemotes.Fire.OnServerEvent:Connect(function(player, origin, direction, fireID)
         if player == self.player then
             if self.character and self.alive then
                 local pastPos = self.character.PrimaryPart.ProjectileSpawn.WorldPosition
@@ -179,7 +190,7 @@ function TDSPlayer:Remotes()
 
                     for _, otherPlayer in ipairs(Players:GetPlayers()) do
                         if otherPlayer ~= self.player then
-                            Remotes.Fire:FireClient(
+                            ControllerRemotes.ReplicateFire:FireClient(
                                 otherPlayer,
                                 self.character,
                                 direction.Unit * self.curWeapon.Settings.Distance.Value,
@@ -192,7 +203,7 @@ function TDSPlayer:Remotes()
             end
         end
     end))
-    table.insert(self.connections, Remotes.Hit.OnServerEvent:Connect(function(player, hit, hitCFrame, fireID)
+    table.insert(self.connections, CharacterRemotes.Hit.OnServerEvent:Connect(function(player, hit, hitCFrame, fireID)
         if player == self.player then
             if hit and hit.Parent:FindFirstChildWhichIsA("Humanoid") then
                 local fireState = self.fireStates[fireID]
