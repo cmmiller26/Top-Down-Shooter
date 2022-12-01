@@ -3,12 +3,15 @@ local PhysicsService = game:GetService("PhysicsService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
+local ServerStorage = game:GetService("ServerStorage")
 
 local PingTimes = require(ReplicatedStorage.PingTimes)
 local Debug = require(ReplicatedStorage.Modules.Debug)
 
 local HitboxHandler = require(ServerScriptService.HitboxHandler)
 local FireState = require(script.FireState)
+
+local Weapons = ServerStorage.Weapons
 
 local ControllerRemotes = ReplicatedStorage.Controllers.TDSController.Remotes
 local CharacterRemotes = ReplicatedStorage.Characters.TDSCharacter.Remotes
@@ -42,10 +45,6 @@ function TDSPlayer.new(player)
     }
 
     setmetatable(self, TDSPlayer)
-
-    local weapons = Instance.new("Folder")
-    weapons.Name = "Weapons"
-    weapons.Parent = self.player
 
     table.insert(self.connections, self.player.CharacterAdded:Connect(function(character)
         self:CharacterAdded(character)
@@ -102,11 +101,6 @@ function TDSPlayer:CharacterAdded(character)
     attach.Part0 = self.character:WaitForChild("Torso")
     attach.Parent = self.character.Torso
 
-    for _, weapon in ipairs(self.weapons) do
-        weapon.Holster.Part1 = self.character.Torso
-        weapon.Parent = self.character
-    end
-
     local projectileSpawn = Instance.new("Attachment")
     projectileSpawn.Name = "ProjectileSpawn"
     projectileSpawn.Position = Vector3.new(0, PROJECTILE_OFFSET, 0)
@@ -119,11 +113,6 @@ function TDSPlayer:CharacterRemoving()
         self:Died()
     end
 
-    for _, weapon in ipairs(self.weapons) do
-        weapon.Parent = self.player.Weapons
-        weapon.Holster.Part1 = nil
-    end
-
     self.character = nil
 end
 
@@ -132,11 +121,50 @@ function TDSPlayer:Died()
 
     HitboxHandler:RemoveCharacter(self.character)
 
+    for _, weapon in ipairs(self.weapons) do
+        self:DropWeapon(weapon)
+    end
+
     -- REMOVE LATER: Respawn
     spawn(function()
         wait(5)
         self.player:LoadCharacter()
     end)
+end
+
+function TDSPlayer:PickupWeapon(weapon)
+    table.insert(self.weapons, weapon)
+
+    weapon.Holster.Part1 = self.character.Torso
+    weapon.Parent = self.character
+
+    CharacterRemotes.AddWeapon:FireClient(self.player, weapon)
+end
+function TDSPlayer:DropWeapon(weapon)
+    local itemValue = Weapons:FindFirstChild(weapon.Name, true)
+    if itemValue then
+        local item = script.Item:Clone()
+        item.Name = weapon.Name
+        item.Item.Value = itemValue
+        item:SetPrimaryPartCFrame(CFrame.new(self.character.PrimaryPart.Position) * CFrame.Angles(0, math.pi/2, math.pi/2))
+
+        for _, motor6D in ipairs(weapon.Motor6Ds:GetChildren()) do
+            motor6D.Part0 = item.PrimaryPart
+        end
+        weapon.Motor6Ds.Parent = item
+        weapon.Mesh.Parent = item
+
+        item.Parent = workspace
+    end
+
+    weapon:Destroy()
+
+    for index, otherWeapon in ipairs(self.weapons) do
+        if otherWeapon == weapon then
+            table.remove(self.weapons, index)
+            break
+        end
+    end
 end
 
 function TDSPlayer:Remotes()
@@ -164,10 +192,15 @@ function TDSPlayer:Remotes()
     table.insert(self.connections, CharacterRemotes.Pickup.OnServerEvent:Connect(function(player, item)
         if player == self.player then
             if self.character and self.alive then
-                local itemValue = item:FindFirstChild("Item")
-                if item and itemValue then
+                if item and item:FindFirstChild("Item") then
                     if (item.PrimaryPart.Position - self.character.PrimaryPart.Position).Magnitude <= MAX_PICKUP_DISTANCE then
-                        print(itemValue.Value)
+                        local itemValue = item.Item.Value
+                        if itemValue then
+                            if itemValue:FindFirstChild("Weapon") then
+                                self:PickupWeapon(itemValue:Clone())
+                            end
+                        end
+
                         item:Destroy()
                     end
                 end

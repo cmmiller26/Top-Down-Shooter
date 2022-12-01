@@ -24,7 +24,9 @@ function TDSCharacter.new(gui, character)
         canFire = false,
         toFire = false,
 
-        fireID = 1
+        fireID = 1,
+
+        connections = {}
     }
 
     setmetatable(self, TDSCharacter)
@@ -32,11 +34,18 @@ function TDSCharacter.new(gui, character)
     self:BindActions()
     self:CreateInteractPart()
 
+    self:Remotes()
+
     return self
 end
 function TDSCharacter:Destroy()
+    for _, connection in ipairs(self.connections) do
+        connection:Disconnect()
+    end
+
     self.interactPart:Destroy()
     self:UnbindActions()
+
     self:Unequip()
 end
 
@@ -100,15 +109,16 @@ function TDSCharacter:CreateInteractPart()
 
     self.interactPart.TouchEnded:Connect(function(otherPart)
         if otherPart.Name == "Collider" then
-            local item = otherPart.Parent
-            if item and item:FindFirstChild("Item") then
-                if item == self.curItem then
-                    self.gui.Pickup.Visible = false
-                    self.gui.Pickup.Label.Text = ""
-
-                    self.curItem = nil
+            for _, part in ipairs(self.interactPart:GetTouchingParts()) do
+                if part.Parent == self.curItem then
+                    return
                 end
             end
+
+            self.gui.Pickup.Visible = false
+            self.gui.Pickup.Label.Text = ""
+
+            self.curItem = nil
         end
     end)
 end
@@ -119,16 +129,13 @@ function TDSCharacter:Interact()
         self.gui.Pickup.Visible = false
         self.gui.Pickup.Label.Text = ""
 
-        self.curItem:Destroy()
         self.curItem = nil
     end
 end
 
 function TDSCharacter:AddWeapon(weapon)
+    table.insert(self.weapons, weapon)
     self.animations[weapon] = self.character.Humanoid.Animator:LoadAnimation(weapon.Idle)
-end
-function TDSCharacter:RemoveWeapon(weapon)
-    self.animations[weapon] = nil
 end
 
 function TDSCharacter:Unequip()
@@ -214,6 +221,12 @@ function TDSCharacter:Fire(toFire)
             self.canFire = true
         until not self.toFire
     end
+end
+
+function TDSCharacter:Remotes()
+    table.insert(self.connections, script.Remotes.AddWeapon.OnClientEvent:Connect(function(weapon)
+        self:AddWeapon(weapon)
+    end))
 end
 
 return TDSCharacter

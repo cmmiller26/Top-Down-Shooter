@@ -57,8 +57,8 @@ function TDSController:Destroy()
 end
 
 function TDSController:CharacterAdded(character)
-    table.insert(self.characters, MoveCharacter.new(self.mouse, character))
-    table.insert(self.characters, TDSCharacter.new(self.gui, character))
+    self.characters["Move"] = MoveCharacter.new(self.mouse, character)
+    self.characters["TDS"] = TDSCharacter.new(self.gui, character)
 
     TDSCamera:ChangeSubject(character)
 
@@ -76,7 +76,7 @@ end
 function TDSController:Died()
     self.alive = false
 
-    for _, character in ipairs(self.characters) do
+    for _, character in pairs(self.characters) do
         character:Destroy()
     end
     self.characters = {}
@@ -94,10 +94,6 @@ function TDSController:Remotes()
             raycastParams = raycastParams,
             meshPrefab = meshPrefab
         })
-    end))
-
-    table.insert(self.connections, script.Remotes.AddWeapon.OnClientEvent:Connect(function(weapon)
-        
     end))
 end
 
