@@ -124,6 +124,7 @@ function TDSPlayer:Died()
     for _, weapon in ipairs(self.weapons) do
         self:DropWeapon(weapon)
     end
+    self.weapons = {}
 
     -- REMOVE LATER: Respawn
     spawn(function()
@@ -158,13 +159,6 @@ function TDSPlayer:DropWeapon(weapon)
     end
 
     weapon:Destroy()
-
-    for index, otherWeapon in ipairs(self.weapons) do
-        if otherWeapon == weapon then
-            table.remove(self.weapons, index)
-            break
-        end
-    end
 end
 
 function TDSPlayer:Remotes()
