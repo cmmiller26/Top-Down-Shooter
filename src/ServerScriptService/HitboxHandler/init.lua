@@ -20,7 +20,6 @@ function HitboxHandler.new()
         accumulator = 0,
         serverTick = 0
     }
-
     setmetatable(self, HitboxHandler)
 
     RunService.Heartbeat:Connect(function(deltaTime)

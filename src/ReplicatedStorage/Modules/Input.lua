@@ -20,7 +20,6 @@ function Input.new()
 
         keysDown = {}
     }
-
     setmetatable(self, Input)
 
     UserInputService.InputBegan:Connect(function(input)

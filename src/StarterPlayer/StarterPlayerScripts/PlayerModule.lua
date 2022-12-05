@@ -15,7 +15,6 @@ function PlayerModule.new()
 
         controller = nil
     }
-
     setmetatable(self, PlayerModule)
 
     self.controller = TDSController.new(self.player, self.camera)

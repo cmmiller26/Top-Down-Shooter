@@ -3,6 +3,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Projectile = require(ReplicatedStorage.Modules.Projectile)
 
+local InteractPart = require(script.InteractPart)
+
 local TDSCharacter = {}
 TDSCharacter.__index = TDSCharacter
 
@@ -18,7 +20,6 @@ function TDSCharacter.new(gui, character)
         animations = {},
 
         interactPart = nil,
-        curItem = nil,
 
         isFiring = false,
         canFire = false,
@@ -28,11 +29,11 @@ function TDSCharacter.new(gui, character)
 
         connections = {}
     }
-
     setmetatable(self, TDSCharacter)
 
     self:BindActions()
-    self:CreateInteractPart()
+
+    self.interactPart = InteractPart.new(self.character, self.gui.Pickup)
 
     self:Remotes()
 
@@ -88,48 +89,10 @@ function TDSCharacter:UnbindActions()
     end
 end
 
-function TDSCharacter:CreateInteractPart()
-    self.interactPart = script.InteractPart:Clone()
-    self.interactPart.Weld.Part0 = self.character.HumanoidRootPart
-    self.interactPart.Parent = self.character
-
-    self.interactPart.Touched:Connect(function(otherPart)
-        if otherPart.Name == "Collider" then
-            local item = otherPart.Parent
-            if item:FindFirstChild("Item") then
-                if item ~= self.curItem then
-                    self.curItem = item
-
-                    self.gui.Pickup.Label.Text = "Pickup " .. self.curItem.Name
-                    self.gui.Pickup.Visible = true
-                end
-            end
-        end
-    end)
-
-    self.interactPart.TouchEnded:Connect(function(otherPart)
-        if otherPart.Name == "Collider" then
-            for _, part in ipairs(self.interactPart:GetTouchingParts()) do
-                if part.Parent == self.curItem then
-                    return
-                end
-            end
-
-            self.gui.Pickup.Visible = false
-            self.gui.Pickup.Label.Text = ""
-
-            self.curItem = nil
-        end
-    end)
-end
 function TDSCharacter:Interact()
-    if self.curItem then
-        script.Remotes.Pickup:FireServer(self.curItem)
-
-        self.gui.Pickup.Visible = false
-        self.gui.Pickup.Label.Text = ""
-
-        self.curItem = nil
+    local item = self.interactPart:GetItem()
+    if item then
+        script.Remotes.Pickup:FireServer(item)
     end
 end
 

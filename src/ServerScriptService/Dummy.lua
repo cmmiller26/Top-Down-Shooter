@@ -16,7 +16,6 @@ function Dummy.new(cframe, parent, moveTargets)
 
         moveTargets = moveTargets
     }
-
     setmetatable(self, Dummy)
 
     self:LoadCharacter()

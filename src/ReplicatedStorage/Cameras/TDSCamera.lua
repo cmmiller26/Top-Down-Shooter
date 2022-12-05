@@ -30,7 +30,6 @@ function TDSCamera.new(camera)
 
         obscuring = {}
     }
-
     setmetatable(self, TDSCamera)
 
     self.camera.CameraType = Enum.CameraType.Scriptable

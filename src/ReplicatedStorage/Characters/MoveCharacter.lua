@@ -21,7 +21,6 @@ function MoveCharacter.new(mouse, character)
 
         connection = nil
     }
-    
     setmetatable(self, MoveCharacter)
 
     for _, state in ipairs(Enum.HumanoidStateType:GetEnumItems()) do

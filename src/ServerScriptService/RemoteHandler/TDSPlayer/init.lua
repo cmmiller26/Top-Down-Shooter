@@ -43,7 +43,6 @@ function TDSPlayer.new(player)
 
         connections = {}
     }
-
     setmetatable(self, TDSPlayer)
 
     table.insert(self.connections, self.player.CharacterAdded:Connect(function(character)

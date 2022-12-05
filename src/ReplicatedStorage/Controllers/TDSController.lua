@@ -25,7 +25,6 @@ function TDSController.new(player, camera)
 
         connections = {}
     }
-
     setmetatable(self, TDSController)
 
     script.Remotes.Connect:FireServer()
