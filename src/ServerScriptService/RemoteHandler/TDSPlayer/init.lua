@@ -11,14 +11,15 @@ local Debug = require(ReplicatedStorage.Modules.Debug)
 local HitboxHandler = require(ServerScriptService.HitboxHandler)
 local FireState = require(script.FireState)
 
-local Weapons = ServerStorage.Weapons
+local Items = ServerStorage.Items
 
 local ControllerRemotes = ReplicatedStorage.Controllers.TDSController.Remotes
 local CharacterRemotes = ReplicatedStorage.Characters.TDSCharacter.Remotes
 
 local HitboxCharacter = ReplicatedStorage.HitboxCharacter
 
-local MAX_PICKUP_DISTANCE = 5
+local MAX_PICKUP_DISTANCE = 4
+local ITEM_RADIUS = 1
 
 local PROJECTILE_OFFSET = 0.5
 
@@ -32,7 +33,9 @@ TDSPlayer.__index = TDSPlayer
 function TDSPlayer.new(player)
     local self = {
         player = player,
-        weapons = {},
+        items = {
+            weapons = {}
+        },
 
         character = nil,
         alive = false,
@@ -106,6 +109,11 @@ function TDSPlayer:CharacterAdded(character)
     projectileSpawn.Parent = self.character.PrimaryPart
 
     HitboxHandler:AddCharacter(self.character)
+
+    wait(2)
+    
+    self:PickupItem(Items.Weapons.AK47:Clone())
+    self:PickupItem(Items.Weapons.Deagle:Clone())
 end
 function TDSPlayer:CharacterRemoving()
     if self.alive then
@@ -115,15 +123,37 @@ function TDSPlayer:CharacterRemoving()
     self.character = nil
 end
 
+local function Sunflower(n)
+    local phi = (math.sqrt(5)+1) / 2
+
+    local points = {}
+    for k = 1, n do
+        local r = math.sqrt(k-0.5) / math.sqrt(n-0.5)
+        local theta = (2*math.pi*k) / (phi*phi)
+        table.insert(points, Vector3.new(r*math.cos(theta), 0, r*math.sin(theta)))
+    end
+    return points
+end
 function TDSPlayer:Died()
     self.alive = false
 
     HitboxHandler:RemoveCharacter(self.character)
 
-    for _, weapon in ipairs(self.weapons) do
-        self:DropWeapon(weapon)
+    local items = {}
+    for name, tbl in pairs(self.items) do
+        for _, value in ipairs(tbl) do
+            table.insert(items, value)
+        end
+        self.items[name] = {}
     end
-    self.weapons = {}
+
+    if next(items) then
+        local radius = math.sqrt(#items - 1) * ITEM_RADIUS
+        for index, point in ipairs(Sunflower(#items)) do
+            local offset = point * radius
+            self:DropItem(items[index], self.character.PrimaryPart.Position + offset)
+        end
+    end
 
     -- REMOVE LATER: Respawn
     spawn(function()
@@ -132,32 +162,34 @@ function TDSPlayer:Died()
     end)
 end
 
-function TDSPlayer:PickupWeapon(weapon)
-    table.insert(self.weapons, weapon)
+function TDSPlayer:PickupItem(item)
+    if item:FindFirstChild("Weapon") then
+        table.insert(self.items.weapons, item)
 
-    weapon.Holster.Part1 = self.character.Torso
-    weapon.Parent = self.character
+        item.Holster.Part1 = self.character.Torso
+        item.Parent = self.character
 
-    CharacterRemotes.AddWeapon:FireClient(self.player, weapon)
+        CharacterRemotes.AddWeapon:FireClient(self.player, item)
+    end
 end
-function TDSPlayer:DropWeapon(weapon)
-    local itemValue = Weapons:FindFirstChild(weapon.Name, true)
+function TDSPlayer:DropItem(item, position)
+    local itemValue = Items:FindFirstChild(item.Name, true)
     if itemValue then
-        local item = script.Item:Clone()
-        item.Name = weapon.Name
-        item.Item.Value = itemValue
-        item:SetPrimaryPartCFrame(CFrame.new(self.character.PrimaryPart.Position) * CFrame.Angles(0, math.pi/2, math.pi/2))
+        local drop = script.Item:Clone()
+        drop.Name = item.Name
+        drop.Item.Value = itemValue
+        drop:SetPrimaryPartCFrame(CFrame.new(position) * CFrame.Angles(0, math.pi/2, math.pi/2))
 
-        for _, motor6D in ipairs(weapon.Motor6Ds:GetChildren()) do
-            motor6D.Part0 = item.PrimaryPart
+        for _, motor6D in ipairs(item.Motor6Ds:GetChildren()) do
+            motor6D.Part0 = drop.PrimaryPart
         end
-        weapon.Motor6Ds.Parent = item
-        weapon.Mesh.Parent = item
+        item.Motor6Ds.Parent = drop
+        item.Mesh.Parent = drop
 
-        item.Parent = workspace
+        drop.Parent = workspace
     end
 
-    weapon:Destroy()
+    item:Destroy()
 end
 
 function TDSPlayer:Remotes()
@@ -187,13 +219,9 @@ function TDSPlayer:Remotes()
             if self.character and self.alive then
                 if item and item:FindFirstChild("Item") then
                     if (item.PrimaryPart.Position - self.character.PrimaryPart.Position).Magnitude <= MAX_PICKUP_DISTANCE then
-                        local itemValue = item.Item.Value
-                        if itemValue then
-                            if itemValue:FindFirstChild("Weapon") then
-                                self:PickupWeapon(itemValue:Clone())
-                            end
+                        if item.Item.Value then
+                            self:PickupItem(item.Item.Value:Clone())
                         end
-
                         item:Destroy()
                     end
                 end

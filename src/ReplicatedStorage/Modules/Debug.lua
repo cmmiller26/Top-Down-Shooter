@@ -1,7 +1,7 @@
 local Debris = game:GetService("Debris")
 
 local Debug = {
-    enabled = true,
+    enabled = false,
 
     lifetime = 2
 }

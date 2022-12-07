@@ -3,44 +3,59 @@ InteractPart.__index = InteractPart
 
 function InteractPart.new(character, frame)
     local self = {
-        pickupGui = frame,
+        interactGui = frame,
 
         collider = nil,
-        curItem = nil
+
+        curInteract = nil
     }
     setmetatable(self, InteractPart)
 
-    self.collider = script.Collider:Clone()
+    self.collider = script.Interact:Clone()
     self.collider.Weld.Part0 = character.PrimaryPart
     self.collider.Parent = character
 
     local items = {}
     self.collider.Touched:Connect(function(otherPart)
-        if otherPart.CollisionGroup == "Collider" then
-            local item = otherPart.Parent
-            if item:FindFirstChild("Item") then
-                table.insert(items, item)
-                self.curItem = item
+        if otherPart.CollisionGroup == "Interact" then
+            if otherPart.Name == "Interact" then
+                self.curInteract = otherPart.Parent
 
-                self.pickupGui.Label.Text = "Pickup " .. self.curItem.Name
-                self.pickupGui.Visible = true
+                self.interactGui.Label.Text = require(self.curInteract:FindFirstChildWhichIsA("ModuleScript")):GetPopup()
+                self.interactGui.Visible = true
+            else
+                local item = otherPart.Parent
+                if item:FindFirstChild("Item") then
+                    table.insert(items, item)
+                    self.curInteract = item
+
+                    self.interactGui.Label.Text = "Pickup " .. self.curInteract.Name
+                    self.interactGui.Visible = true
+                end
             end
         end
     end)
     self.collider.TouchEnded:Connect(function(otherPart)
-        if otherPart.CollisionGroup == "Collider" then
-            for index, item in ipairs(items) do
-                if item.PrimaryPart == otherPart or item.PrimaryPart == nil then
-                    table.remove(items, index)
-                end
-            end
-            self.curItem = select(2, next(items))
+        if otherPart.CollisionGroup == "Interact" then
+            if otherPart.Name == "Interact" then
+                self.curInteract = nil
 
-            if self.curItem then
-                self.pickupGui.Label.Text = "Pickup " .. self.curItem.Name
+                self.interactGui.Visible = false
+                self.interactGui.Label.Text = ""
             else
-                self.pickupGui.Visible = false
-                self.pickupGui.Label.Text = ""
+                for index, item in ipairs(items) do
+                    if item.PrimaryPart == otherPart or item.PrimaryPart == nil then
+                        table.remove(items, index)
+                    end
+                end
+                self.curInteract = select(2, next(items))
+
+                if self.curInteract then
+                    self.interactGui.Label.Text = "Pickup " .. self.curInteract.Name
+                else
+                    self.interactGui.Visible = false
+                    self.interactGui.Label.Text = ""
+                end
             end
         end
     end)
@@ -48,14 +63,14 @@ function InteractPart.new(character, frame)
     return self
 end
 function InteractPart:Destroy()
-    self.pickupGui.Visible = false
-    self.pickupGui.Label.Text = ""
+    self.interactGui.Visible = false
+    self.interactGui.Label.Text = ""
 
     self.collider:Destroy()
 end
 
-function InteractPart:GetItem()
-    return self.curItem
+function InteractPart:GetInteract()
+    return self.curInteract
 end
 
 return InteractPart

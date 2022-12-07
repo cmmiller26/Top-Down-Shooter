@@ -33,7 +33,7 @@ function TDSCharacter.new(gui, character)
 
     self:BindActions()
 
-    self.interactPart = InteractPart.new(self.character, self.gui.Pickup)
+    self.interactPart = InteractPart.new(self.character, self.gui.Interact)
 
     self:Remotes()
 
@@ -53,7 +53,9 @@ end
 local EquipKeyCodes = {
     Enum.KeyCode.One,
     Enum.KeyCode.Two,
-    Enum.KeyCode.Three
+    Enum.KeyCode.Three,
+    Enum.KeyCode.Four,
+    Enum.KeyCode.Five
 }
 function TDSCharacter:BindActions()
     for i = 1, #EquipKeyCodes do
@@ -90,9 +92,14 @@ function TDSCharacter:UnbindActions()
 end
 
 function TDSCharacter:Interact()
-    local item = self.interactPart:GetItem()
-    if item then
-        script.Remotes.Pickup:FireServer(item)
+    local interact = self.interactPart:GetInteract()
+    if interact then
+        local module = interact:FindFirstChildWhichIsA("ModuleScript")
+        if module then
+            require(module):Interact()
+        elseif interact:FindFirstChild("Item") then
+            script.Remotes.Pickup:FireServer(interact)
+        end
     end
 end
 
@@ -177,12 +184,12 @@ function TDSCharacter:Fire(toFire)
         repeat
             self.canFire = false
             self.isFiring = true
-
+    
             Fire()
-
+    
             self.isFiring = false
             self.canFire = true
-        until not self.toFire
+        until not self.toFire or not self.curWeapon.Settings.Auto.Value
     end
 end
 
