@@ -1,9 +1,12 @@
 local ContextActionService = game:GetService("ContextActionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 local Projectile = require(ReplicatedStorage.Modules.Projectile)
 
 local InteractPart = require(script.InteractPart)
+
+local MAX_ITEMS = 5
 
 local TDSCharacter = {}
 TDSCharacter.__index = TDSCharacter
@@ -14,8 +17,8 @@ function TDSCharacter.new(gui, character)
 
         character = character,
 
-        weapons = {},
-        curWeapon = nil,
+        items = {},
+        curItem = nil,
 
         animations = {},
 
@@ -96,47 +99,65 @@ function TDSCharacter:Interact()
     if interact then
         local module = interact:FindFirstChildWhichIsA("ModuleScript")
         if module then
-            require(module):Interact()
-        elseif interact:FindFirstChild("Item") then
-            script.Remotes.Pickup:FireServer(interact)
+            require(module).Interact()
+        elseif interact.Type == "Item" then
+            if #self.items >= MAX_ITEMS then
+                local label = self.gui.Interact.Full:Clone()
+                label.Parent = self.gui.Interact
+                label.Visible = true
+
+                wait(0.35)
+
+                local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                local tween = TweenService:Create(label, tweenInfo, {
+                    BackgroundTransparency = 1,
+                    TextTransparency = 1
+                })
+                tween:Play()
+                tween.Completed:Wait()
+
+                label:Destroy()
+            else
+                script.Remotes.Pickup:FireServer(interact)
+            end
         end
     end
 end
 
-function TDSCharacter:AddWeapon(weapon)
-    table.insert(self.weapons, weapon)
-    self.animations[weapon] = self.character.Humanoid.Animator:LoadAnimation(weapon.Idle)
+function TDSCharacter:Add(item)
+    table.insert(self.items, item)
+    self.animations[item] = self.character.Humanoid.Animator:LoadAnimation(item.Idle)
 end
 
 function TDSCharacter:Unequip()
-    if self.curWeapon then
+    if self.curItem then
         for _, animation in pairs(self.animations) do
             animation:Stop(0)
         end
 
-        self.curWeapon.Holster.Enabled = true
+        self.curItem.Holster.Enabled = true
         self.character.Torso.Attach.Part1 = nil
 
         script.Remotes.Unequip:FireServer()
 
-        self.curWeapon = nil
+        self.curItem = nil
         self.canFire = false
         self.toFire = false
     end
 end
 function TDSCharacter:Equip(slot)
     if not self.isFiring then
-        local weapon = self.weapons[slot]
-        if weapon and weapon ~= self.curWeapon then
+        local item = self.items[slot]
+        if item and item ~= self.curItem then
             self:Unequip()
 
-            self.curWeapon = weapon
-            script.Remotes.Equip:FireServer(self.curWeapon)
+            self.curItem = item
+            script.Remotes.Equip:FireServer(self.curItem)
 
-            self.character.Torso.Attach.Part1 = self.curWeapon.PrimaryPart
-            self.curWeapon.Holster.Enabled = false
+            self.character.Torso.Attach.Part1 = self.curItem.PrimaryPart
+            self.curItem.Holster.Enabled = false
 
-            self.animations[self.curWeapon]:Play(0)
+            self.animations[self.curItem]:Play(0)
 
             self.canFire = true
         else
@@ -150,7 +171,7 @@ function TDSCharacter:Fire(toFire)
         self.toFire = toFire
     end
 
-    if self.curWeapon and self.canFire and self.toFire then
+    if self.curItem and self.canFire and self.toFire then
         local raycastParams = RaycastParams.new()
         raycastParams.FilterDescendantsInstances = {self.character}
         raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
@@ -163,10 +184,10 @@ function TDSCharacter:Fire(toFire)
             local direction = self.character.PrimaryPart.CFrame.LookVector
             local projectile = Projectile.new({
                 origin = origin,
-                velocity = direction * self.curWeapon.Settings.Speed.Value,
-                distance = self.curWeapon.Settings.Distance.Value,
+                velocity = direction * self.curItem.Settings.Speed.Value,
+                distance = self.curItem.Settings.Distance.Value,
                 raycastParams = raycastParams,
-                meshPrefab = self.curWeapon.Effects.Projectile.Value
+                meshPrefab = self.curItem.Effects.Projectile.Value
             })
             
             script.Remotes.Fire:FireServer(origin, direction, fireID, tick())
@@ -178,7 +199,7 @@ function TDSCharacter:Fire(toFire)
                 end
             end)
 
-            wait(60/self.curWeapon.Settings.RPM.Value)
+            wait(60/self.curItem.Settings.RPM.Value)
         end
 
         repeat
@@ -189,13 +210,13 @@ function TDSCharacter:Fire(toFire)
     
             self.isFiring = false
             self.canFire = true
-        until not self.toFire or not self.curWeapon.Settings.Auto.Value
+        until not self.toFire or not self.curItem.Settings.Auto.Value
     end
 end
 
 function TDSCharacter:Remotes()
-    table.insert(self.connections, script.Remotes.AddWeapon.OnClientEvent:Connect(function(weapon)
-        self:AddWeapon(weapon)
+    table.insert(self.connections, script.Remotes.Add.OnClientEvent:Connect(function(item)
+        self:Add(item)
     end))
 end
 

@@ -1,5 +1,4 @@
 local Debris = game:GetService("Debris")
-local PhysicsService = game:GetService("PhysicsService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
@@ -18,6 +17,8 @@ local CharacterRemotes = ReplicatedStorage.Characters.TDSCharacter.Remotes
 
 local HitboxCharacter = ReplicatedStorage.HitboxCharacter
 
+local MAX_ITEMS = 5
+
 local MAX_PICKUP_DISTANCE = 4
 local ITEM_RADIUS = 1
 
@@ -33,14 +34,12 @@ TDSPlayer.__index = TDSPlayer
 function TDSPlayer.new(player)
     local self = {
         player = player,
-        items = {
-            weapons = {}
-        },
+        items = {},
 
         character = nil,
         alive = false,
 
-        curWeapon = nil,
+        curItem = nil,
 
         fireStates = {},
 
@@ -58,13 +57,13 @@ function TDSPlayer.new(player)
     table.insert(self.connections, self.player.CharacterAppearanceLoaded:Connect(function(character)
         for _, child in ipairs(character:GetChildren()) do
             if child:IsA("BasePart") then
-                PhysicsService:SetPartCollisionGroup(child, "Player")
+                child.CollisionGroup = "Player"
             elseif child:IsA("Accessory") then
                 local part = child:FindFirstChildWhichIsA("BasePart")
                 if part then
                     part.CanQuery = false
                     part.CanTouch = false
-                    PhysicsService:SetPartCollisionGroup(part, "NoCollide")
+                    part.CollisionGroup = "NoCollide"
                 end
             end
         end
@@ -112,8 +111,8 @@ function TDSPlayer:CharacterAdded(character)
 
     wait(2)
     
-    self:PickupItem(Items.Weapons.AK47:Clone())
-    self:PickupItem(Items.Weapons.Deagle:Clone())
+    self:Pickup(Items.AK47:Clone())
+    self:Pickup(Items.Deagle:Clone())
 end
 function TDSPlayer:CharacterRemoving()
     if self.alive then
@@ -139,19 +138,11 @@ function TDSPlayer:Died()
 
     HitboxHandler:RemoveCharacter(self.character)
 
-    local items = {}
-    for name, tbl in pairs(self.items) do
-        for _, value in ipairs(tbl) do
-            table.insert(items, value)
-        end
-        self.items[name] = {}
-    end
-
-    if next(items) then
-        local radius = math.sqrt(#items - 1) * ITEM_RADIUS
-        for index, point in ipairs(Sunflower(#items)) do
+    if next(self.items) then
+        local radius = math.sqrt(#self.items - 1) * ITEM_RADIUS
+        for index, point in ipairs(Sunflower(#self.items)) do
             local offset = point * radius
-            self:DropItem(items[index], self.character.PrimaryPart.Position + offset)
+            self:DropItem(self.items[index], self.character.PrimaryPart.Position + offset)
         end
     end
 
@@ -163,14 +154,18 @@ function TDSPlayer:Died()
 end
 
 function TDSPlayer:PickupItem(item)
-    if item:FindFirstChild("Weapon") then
-        table.insert(self.items.weapons, item)
+    if #self.items < MAX_ITEMS then
+        table.insert(self.items, item)
 
         item.Holster.Part1 = self.character.Torso
         item.Parent = self.character
 
-        CharacterRemotes.AddWeapon:FireClient(self.player, item)
+        CharacterRemotes.Add:FireClient(self.player, item)
+
+        return true
     end
+
+    return false
 end
 function TDSPlayer:DropItem(item, position)
     local itemValue = Items:FindFirstChild(item.Name, true)
@@ -195,20 +190,20 @@ end
 function TDSPlayer:Remotes()
     table.insert(self.connections, CharacterRemotes.Unequip.OnServerEvent:Connect(function(player)
         if player == self.player then
-            if self.curWeapon and self.character then
-                self.curWeapon.Holster.Enabled = true
+            if self.curItem and self.character then
+                self.curItem.Holster.Enabled = true
                 self.character.Torso.Attach.Part1 = nil
-                self.curWeapon = nil
+                self.curItem = nil
             end
         end
     end))
-    table.insert(self.connections, CharacterRemotes.Equip.OnServerEvent:Connect(function(player, weapon)
+    table.insert(self.connections, CharacterRemotes.Equip.OnServerEvent:Connect(function(player, item)
         if player == self.player then
             if self.character and self.alive then
-                if weapon and weapon.Parent == self.character then
-                    self.curWeapon = weapon
-                    self.character.Torso.Attach.Part1 = self.curWeapon.PrimaryPart
-                    self.curWeapon.Holster.Enabled = false
+                if item and item.Parent == self.character then
+                    self.curItem = item
+                    self.character.Torso.Attach.Part1 = self.curItem.PrimaryPart
+                    self.curItem.Holster.Enabled = false
                 end
             end
         end
@@ -220,9 +215,10 @@ function TDSPlayer:Remotes()
                 if item and item:FindFirstChild("Item") then
                     if (item.PrimaryPart.Position - self.character.PrimaryPart.Position).Magnitude <= MAX_PICKUP_DISTANCE then
                         if item.Item.Value then
-                            self:PickupItem(item.Item.Value:Clone())
+                            if self:PickupItem(item.Item.Value:Clone()) then
+                                item:Destroy()
+                            end
                         end
-                        item:Destroy()
                     end
                 end
             end
