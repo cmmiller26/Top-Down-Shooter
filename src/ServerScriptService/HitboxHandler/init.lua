@@ -46,8 +46,8 @@ function HitboxHandler:AddCharacter(character)
     self.hitboxStates[character] = {}
 end
 function HitboxHandler:RemoveCharacter(character)
-    for index, otherCharacter in ipairs(self.characters) do
-        if otherCharacter == character then
+    for index, value in ipairs(self.characters) do
+        if value == character then
             self.hitboxStates[character] = nil
             table.remove(self.characters, index)
             break

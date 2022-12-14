@@ -15,46 +15,41 @@ function InteractPart.new(character, frame)
     self.collider.Weld.Part0 = character.PrimaryPart
     self.collider.Parent = character
 
-    local items = {}
-    self.collider.Touched:Connect(function(otherPart)
-        if otherPart.CollisionGroup == "Interact" then
-            local interact = otherPart.Parent
-            if interact.Type.Value == "Script" then
-                self.curInteract = otherPart.Parent
+    local function GetLabel(interact)
+        if interact.Type.Value == "Script" then
+            return require(self.curInteract:FindFirstChildWhichIsA("ModuleScript")).GetPopup()
+        elseif interact.Type.Value == "Item" then
+            return "Pickup " .. self.curInteract.Name
+        end
+    end
 
-                self.interactGui.Label.Text = require(self.curInteract:FindFirstChildWhichIsA("ModuleScript")).GetPopup()
-                self.interactGui.Visible = true
-            elseif interact.Type.Value == "Item" then
-                table.insert(items, interact)
-                self.curInteract = interact
+    local interactions = {}
+    self.collider.Touched:Connect(function(part)
+        if part.CollisionGroup == "Interact" then
+            local interact = part.Parent
+            table.insert(interactions, interact)
 
-                self.interactGui.Label.Text = "Pickup " .. self.curInteract.Name
-                self.interactGui.Visible = true
-            end
+            self.curInteract = interact
+
+            self.interactGui.Label.Text = GetLabel(self.curInteract)
+            self.interactGui.Visible = true
         end
     end)
-    self.collider.TouchEnded:Connect(function(otherPart)
-        if otherPart.CollisionGroup == "Interact" then
-            local interact = otherPart.Parent
-            if interact.Type.Value == "Interact" then
-                self.curInteract = nil
+    self.collider.TouchEnded:Connect(function(part)
+        if part.CollisionGroup == "Interact" then
+            local interact = part.Parent
+            for index, value in ipairs(interactions) do
+                if value.PrimaryPart == part or value.PrimaryPart == nil then
+                    table.remove(interactions, index)
+                end
+            end
+            self.curInteract = select(2, next(interactions))
 
+            if self.curInteract then
+                self.interactGui.Label.Text = GetLabel(self.curInteract)
+            else
                 self.interactGui.Visible = false
                 self.interactGui.Label.Text = ""
-            elseif interact.Type.Value == "Item" then
-                for index, item in ipairs(items) do
-                    if item.PrimaryPart == otherPart or item.PrimaryPart == nil then
-                        table.remove(items, index)
-                    end
-                end
-                self.curInteract = select(2, next(items))
-
-                if self.curInteract then
-                    self.interactGui.Label.Text = "Pickup " .. self.curInteract.Name
-                else
-                    self.interactGui.Visible = false
-                    self.interactGui.Label.Text = ""
-                end
             end
         end
     end)

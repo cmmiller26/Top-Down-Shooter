@@ -82,12 +82,12 @@ function TDSController:Died()
 end
 
 function TDSController:Remotes()
-    table.insert(self.connections, script.Remotes.ReplicateFire.OnClientEvent:Connect(function(otherCharacter, velocity, distance, meshPrefab)
+    table.insert(self.connections, script.Remotes.ReplicateFire.OnClientEvent:Connect(function(character, velocity, distance, meshPrefab)
         local raycastParams = RaycastParams.new()
-        raycastParams.FilterDescendantsInstances = {otherCharacter}
+        raycastParams.FilterDescendantsInstances = {character}
         raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
         Projectile.new({
-            origin = otherCharacter.PrimaryPart.ProjectileSpawn.WorldPosition,
+            origin = character.PrimaryPart.ProjectileSpawn.WorldPosition,
             velocity = velocity,
             distance = distance,
             raycastParams = raycastParams,

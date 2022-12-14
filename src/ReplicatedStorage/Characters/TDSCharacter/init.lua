@@ -85,6 +85,13 @@ function TDSCharacter:BindActions()
         end
     end
     ContextActionService:BindAction("TDSInteract", onInteract, false, Enum.KeyCode.F)
+
+    local function onDrop(_, inputState)
+        if inputState == Enum.UserInputState.Begin then
+            self:Drop()
+        end
+    end
+    ContextActionService:BindAction("TDSDrop", onDrop, false, Enum.KeyCode.Q)
 end
 function TDSCharacter:UnbindActions()
     ContextActionService:UnbindAction("TDSFire")
@@ -97,19 +104,18 @@ end
 function TDSCharacter:Interact()
     local interact = self.interactPart:GetInteract()
     if interact then
-        local module = interact:FindFirstChildWhichIsA("ModuleScript")
-        if module then
-            require(module).Interact()
-        elseif interact.Type == "Item" then
-            if #self.items >= MAX_ITEMS then
-                local label = self.gui.Interact.Full:Clone()
+        if interact.Type.Value == "Script" then
+            require(interact:FindFirstChildWhichIsA("ModuleScript")).Interact()
+        elseif interact.Type.Value == "Item" then
+            if #self.items >= MAX_ITEMS and not self.gui.Interact:FindFirstChild("Full") then
+                local label = self.gui.Interact.FullPrefab:Clone()
+                label.Name = "Full"
                 label.Parent = self.gui.Interact
                 label.Visible = true
 
                 wait(0.35)
 
-                local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                local tween = TweenService:Create(label, tweenInfo, {
+                local tween = TweenService:Create(label, TweenInfo.new(0.15), {
                     BackgroundTransparency = 1,
                     TextTransparency = 1
                 })
@@ -127,6 +133,21 @@ end
 function TDSCharacter:Add(item)
     table.insert(self.items, item)
     self.animations[item] = self.character.Humanoid.Animator:LoadAnimation(item.Idle)
+end
+function TDSCharacter:Drop()
+    if self.curItem then
+        local item = self.curItem
+        self:Unequip()
+
+        script.Remotes.Drop:FireServer(item)
+
+        for index, value in ipairs(self.items) do
+            if value == item then
+                self.items[index] = nil
+                break
+            end
+        end
+    end
 end
 
 function TDSCharacter:Unequip()

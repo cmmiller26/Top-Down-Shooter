@@ -56,9 +56,7 @@ function TDSPlayer.new(player)
 
     table.insert(self.connections, self.player.CharacterAppearanceLoaded:Connect(function(character)
         for _, child in ipairs(character:GetChildren()) do
-            if child:IsA("BasePart") then
-                child.CollisionGroup = "Player"
-            elseif child:IsA("Accessory") then
+            if child:IsA("Accessory") then
                 local part = child:FindFirstChildWhichIsA("BasePart")
                 if part then
                     part.CanQuery = false
@@ -91,6 +89,12 @@ function TDSPlayer:CharacterAdded(character)
     self.character.PrimaryPart.CanQuery = false
     self.character.PrimaryPart.CanTouch = false
 
+    for _, part in ipairs(self.character:GetChildren()) do
+        if part:IsA("BasePart") then
+            part.CollisionGroup = "Player"
+        end
+    end
+
     self.character:WaitForChild("Humanoid").BreakJointsOnDeath = false
     self.character.Humanoid.Died:Connect(function()
         self:Died()
@@ -108,11 +112,6 @@ function TDSPlayer:CharacterAdded(character)
     projectileSpawn.Parent = self.character.PrimaryPart
 
     HitboxHandler:AddCharacter(self.character)
-
-    wait(2)
-    
-    self:Pickup(Items.AK47:Clone())
-    self:Pickup(Items.Deagle:Clone())
 end
 function TDSPlayer:CharacterRemoving()
     if self.alive then
@@ -139,10 +138,22 @@ function TDSPlayer:Died()
     HitboxHandler:RemoveCharacter(self.character)
 
     if next(self.items) then
-        local radius = math.sqrt(#self.items - 1) * ITEM_RADIUS
-        for index, point in ipairs(Sunflower(#self.items)) do
+        local origin = self.character.PrimaryPart.Position
+        local radius = math.sqrt(#self.items - 1) * ITEM_RADIUS * 2
+        for _, point in ipairs(Sunflower(#self.items)) do
             local offset = point * radius
-            self:DropItem(self.items[index], self.character.PrimaryPart.Position + offset)
+
+            local raycastParams = RaycastParams.new()
+            raycastParams.FilterDescendantsInstances = {workspace.Baseplate}
+            raycastParams.FilterType = Enum.RaycastFilterType.Whitelist
+
+            local target = origin + offset
+            local raycastResult = workspace:Raycast(target, Vector3.new(0, -1000, 0), raycastParams)
+            if raycastResult then
+                target = raycastResult.Position
+            end
+
+            self:Drop(self.items[1], origin, target)
         end
     end
 
@@ -153,27 +164,21 @@ function TDSPlayer:Died()
     end)
 end
 
-function TDSPlayer:PickupItem(item)
-    if #self.items < MAX_ITEMS then
-        table.insert(self.items, item)
+function TDSPlayer:Pickup(item)
+    table.insert(self.items, item)
 
-        item.Holster.Part1 = self.character.Torso
-        item.Parent = self.character
+    item.Holster.Part1 = self.character.Torso
+    item.Parent = self.character
 
-        CharacterRemotes.Add:FireClient(self.player, item)
-
-        return true
-    end
-
-    return false
+    CharacterRemotes.Add:FireClient(self.player, item)
 end
-function TDSPlayer:DropItem(item, position)
+function TDSPlayer:Drop(item, origin, target)
     local itemValue = Items:FindFirstChild(item.Name, true)
     if itemValue then
         local drop = script.Item:Clone()
         drop.Name = item.Name
         drop.Item.Value = itemValue
-        drop:SetPrimaryPartCFrame(CFrame.new(position) * CFrame.Angles(0, math.pi/2, math.pi/2))
+        drop:SetPrimaryPartCFrame(CFrame.new(origin) * CFrame.Angles(0, math.pi/2, math.pi/2))
 
         for _, motor6D in ipairs(item.Motor6Ds:GetChildren()) do
             motor6D.Part0 = drop.PrimaryPart
@@ -182,6 +187,16 @@ function TDSPlayer:DropItem(item, position)
         item.Mesh.Parent = drop
 
         drop.Parent = workspace
+
+        drop.AlignPosition.Position = target
+        Debris:AddItem(drop.AlignPosition, 2)
+    end
+
+    for index, value in ipairs(self.items) do
+        if value == item then
+            table.remove(self.items, index)
+            break
+        end
     end
 
     item:Destroy()
@@ -212,12 +227,12 @@ function TDSPlayer:Remotes()
     table.insert(self.connections, CharacterRemotes.Pickup.OnServerEvent:Connect(function(player, item)
         if player == self.player then
             if self.character and self.alive then
-                if item and item:FindFirstChild("Item") then
+                local itemValue = item:FindFirstChild("Item")
+                if item and itemValue then
                     if (item.PrimaryPart.Position - self.character.PrimaryPart.Position).Magnitude <= MAX_PICKUP_DISTANCE then
-                        if item.Item.Value then
-                            if self:PickupItem(item.Item.Value:Clone()) then
-                                item:Destroy()
-                            end
+                        if itemValue.Value and #self.items < MAX_ITEMS then
+                            self:Pickup(itemValue.Value:Clone())
+                            item:Destroy()
                         end
                     end
                 end
@@ -233,19 +248,19 @@ function TDSPlayer:Remotes()
                 if (origin - pastPos).Magnitude <= ORIGIN_ERROR then
                     self.fireStates[fireID] = FireState.new(
                         origin,
-                        direction.Unit * self.curWeapon.Settings.Distance.Value,
-                        self.curWeapon.Settings.Speed.Value,
-                        self.curWeapon.Settings.Damage.Value
+                        direction.Unit * self.curItem.Settings.Distance.Value,
+                        self.curItem.Settings.Speed.Value,
+                        self.curItem.Settings.Damage.Value
                     )
 
-                    for _, otherPlayer in ipairs(Players:GetPlayers()) do
-                        if otherPlayer ~= self.player then
+                    for _, player in ipairs(Players:GetPlayers()) do
+                        if player ~= self.player then
                             ControllerRemotes.ReplicateFire:FireClient(
-                                otherPlayer,
+                                player,
                                 self.character,
-                                direction.Unit * self.curWeapon.Settings.Distance.Value,
-                                self.curWeapon.Settings.Distance.Value,
-                                self.curWeapon.Effects.Projectile.Value
+                                direction.Unit * self.curItem.Settings.Distance.Value,
+                                self.curItem.Settings.Distance.Value,
+                                self.curItem.Effects.Projectile.Value
                             )
                         end
                     end
