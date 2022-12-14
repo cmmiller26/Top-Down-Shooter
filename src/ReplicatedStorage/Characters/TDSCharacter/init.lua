@@ -1,6 +1,5 @@
 local ContextActionService = game:GetService("ContextActionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
 
 local Projectile = require(ReplicatedStorage.Modules.Projectile)
 
@@ -154,6 +153,8 @@ end
 
 function TDSCharacter:Unequip()
     if self.curItem then
+        self.gui:Unequip()
+
         for _, animation in pairs(self.animations) do
             animation:Stop(0)
         end
@@ -181,6 +182,13 @@ function TDSCharacter:Equip(slot)
             self.curItem.Holster.Enabled = false
 
             self.animations[self.curItem]:Play(0)
+
+            for index, item in ipairs(self.items) do
+                if item == self.curItem then
+                    self.gui:Equip(index, item)
+                    break
+                end
+            end
 
             self.canFire = true
         else

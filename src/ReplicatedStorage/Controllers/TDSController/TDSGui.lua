@@ -1,5 +1,8 @@
 local TweenService = game:GetService("TweenService")
 
+local SLOT_DEFAULT_SIZE = UDim2.fromScale(1, 1)
+local SLOT_EQUIP_SIZE = UDim2.fromScale(1.15, 1.15)
+
 local TDSGui = {}
 TDSGui.__index = TDSGui
 
@@ -7,7 +10,9 @@ function TDSGui.new(player)
     local self = {
         player = player,
 
-        gui = nil
+        gui = nil,
+
+        curSlot = nil
     }
 
     self.gui = script.ScreenGui:Clone()
@@ -16,6 +21,27 @@ function TDSGui.new(player)
     setmetatable(self, TDSGui)
 
     return self
+end
+function TDSGui:Destroy()
+    self.gui:Destroy()
+end
+
+function TDSGui:Equip(slot, item)
+    self:Unequip()
+
+    local frame = self.gui.Items:FindFirstChild("Slot" .. slot)
+    if frame then
+        self.curSlot = frame
+        self.curSlot.Size = SLOT_EQUIP_SIZE
+
+        self.curSlot.Label.Text = item.Name
+    end
+end
+function TDSGui:Unequip()
+    if self.curSlot then
+        self.curSlot.Label.Text = ""
+        self.curSlot.Size = SLOT_DEFAULT_SIZE
+    end
 end
 
 function TDSGui:Interact(visible, message)

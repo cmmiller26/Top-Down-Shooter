@@ -36,7 +36,6 @@ function InteractPart.new(character, gui)
     end)
     self.collider.TouchEnded:Connect(function(part)
         if part.CollisionGroup == "Interact" then
-            local interact = part.Parent
             for index, value in ipairs(interactions) do
                 if value.PrimaryPart == part or value.PrimaryPart == nil then
                     table.remove(interactions, index)
