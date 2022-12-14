@@ -1,9 +1,9 @@
 local InteractPart = {}
 InteractPart.__index = InteractPart
 
-function InteractPart.new(character, frame)
+function InteractPart.new(character, gui)
     local self = {
-        interactGui = frame,
+        gui = gui,
 
         collider = nil,
 
@@ -31,8 +31,7 @@ function InteractPart.new(character, frame)
 
             self.curInteract = interact
 
-            self.interactGui.Label.Text = GetLabel(self.curInteract)
-            self.interactGui.Visible = true
+            self.gui:Interact(true, GetLabel(self.curInteract))
         end
     end)
     self.collider.TouchEnded:Connect(function(part)
@@ -46,10 +45,9 @@ function InteractPart.new(character, frame)
             self.curInteract = select(2, next(interactions))
 
             if self.curInteract then
-                self.interactGui.Label.Text = GetLabel(self.curInteract)
+                self.gui:Interact(true, GetLabel(self.curInteract))
             else
-                self.interactGui.Visible = false
-                self.interactGui.Label.Text = ""
+                self.gui:Interact(false)
             end
         end
     end)
@@ -57,9 +55,7 @@ function InteractPart.new(character, frame)
     return self
 end
 function InteractPart:Destroy()
-    self.interactGui.Visible = false
-    self.interactGui.Label.Text = ""
-
+    self.gui:Interact(false)
     self.collider:Destroy()
 end
 

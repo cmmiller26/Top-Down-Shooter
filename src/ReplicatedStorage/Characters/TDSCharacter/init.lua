@@ -34,9 +34,13 @@ function TDSCharacter.new(gui, character)
     }
     setmetatable(self, TDSCharacter)
 
+    for i = 1, MAX_ITEMS do
+        self.items[i] = false
+    end
+
     self:BindActions()
 
-    self.interactPart = InteractPart.new(self.character, self.gui.Interact)
+    self.interactPart = InteractPart.new(self.character, self.gui)
 
     self:Remotes()
 
@@ -107,22 +111,15 @@ function TDSCharacter:Interact()
         if interact.Type.Value == "Script" then
             require(interact:FindFirstChildWhichIsA("ModuleScript")).Interact()
         elseif interact.Type.Value == "Item" then
-            if #self.items >= MAX_ITEMS and not self.gui.Interact:FindFirstChild("Full") then
-                local label = self.gui.Interact.FullPrefab:Clone()
-                label.Name = "Full"
-                label.Parent = self.gui.Interact
-                label.Visible = true
+            local num = 0
+            for _, item in pairs(self.items) do
+                if item then
+                    num += 1
+                end
+            end
 
-                wait(0.35)
-
-                local tween = TweenService:Create(label, TweenInfo.new(0.15), {
-                    BackgroundTransparency = 1,
-                    TextTransparency = 1
-                })
-                tween:Play()
-                tween.Completed:Wait()
-
-                label:Destroy()
+            if num >= MAX_ITEMS then
+                self.gui:Full()
             else
                 script.Remotes.Pickup:FireServer(interact)
             end
@@ -131,7 +128,12 @@ function TDSCharacter:Interact()
 end
 
 function TDSCharacter:Add(item)
-    table.insert(self.items, item)
+    for index, value in pairs(self.items) do
+        if not value then
+            self.items[index] = item
+            break
+        end
+    end
     self.animations[item] = self.character.Humanoid.Animator:LoadAnimation(item.Idle)
 end
 function TDSCharacter:Drop()
@@ -141,9 +143,9 @@ function TDSCharacter:Drop()
 
         script.Remotes.Drop:FireServer(item)
 
-        for index, value in ipairs(self.items) do
+        for index, value in pairs(self.items) do
             if value == item then
-                self.items[index] = nil
+                self.items[index] = false
                 break
             end
         end

@@ -239,6 +239,34 @@ function TDSPlayer:Remotes()
             end
         end
     end))
+    table.insert(self.connections, CharacterRemotes.Drop.OnServerEvent:Connect(function(player, item)
+        if player == self.player then
+            if self.character and self.alive then
+                if item then
+                    local bool = false
+                    for _, value in ipairs(self.items) do
+                        if value == item then
+                            bool = true
+                        end
+                    end
+                    if bool then
+                        local raycastParams = RaycastParams.new()
+                        raycastParams.FilterDescendantsInstances = {workspace.Baseplate}
+                        raycastParams.FilterType = Enum.RaycastFilterType.Whitelist
+
+                        local origin = self.character.PrimaryPart.Position
+                        local target = origin
+                        local raycastResult = workspace:Raycast(target, Vector3.new(0, -1000, 0), raycastParams)
+                        if raycastResult then
+                            target = raycastResult.Position
+                        end
+
+                        self:Drop(item, origin, target)
+                    end
+                end
+            end
+        end
+    end))
 
     table.insert(self.connections, CharacterRemotes.Fire.OnServerEvent:Connect(function(player, origin, direction, fireID)
         if player == self.player then

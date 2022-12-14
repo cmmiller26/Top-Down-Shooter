@@ -9,6 +9,8 @@ local TDSCharacter = require(Characters.TDSCharacter)
 
 local Projectile = require(ReplicatedStorage.Modules.Projectile)
 
+local TDSGui = require(script.TDSGui)
+
 local TDSController = {}
 TDSController.__index = TDSController
 
@@ -29,8 +31,7 @@ function TDSController.new(player, camera)
 
     script.Remotes.Connect:FireServer()
 
-    self.gui = script.ScreenGui:Clone()
-    self.gui.Parent = self.player.PlayerGui
+    self.gui = TDSGui.new(self.player)
 
     table.insert(self.connections, self.player.CharacterAdded:Connect(function(character)
         self:CharacterAdded(character)
