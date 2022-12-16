@@ -17,6 +17,9 @@ local CharacterRemotes = ReplicatedStorage.Characters.TDSCharacter.Remotes
 
 local HitboxCharacter = ReplicatedStorage.HitboxCharacter
 
+local MAX_HEALTH = 100
+local MAX_SHIELD = 100
+
 local MAX_ITEMS = 5
 
 local MAX_PICKUP_DISTANCE = 4
@@ -101,6 +104,13 @@ function TDSPlayer:CharacterAdded(character)
     end)
     self.alive = true
 
+    self.character.Humanoid.MaxHealth = MAX_HEALTH
+    self.character.Humanoid.Health = MAX_HEALTH
+
+    local shield = Instance.new("NumberValue")
+    shield.Name = "Shield"
+    shield.Parent = self.character.Humanoid
+
     local attach = Instance.new("Motor6D")
     attach.Name = "Attach"
     attach.Part0 = self.character:WaitForChild("Torso")
@@ -178,7 +188,7 @@ function TDSPlayer:Drop(item, origin, target)
         local drop = script.Item:Clone()
         drop.Name = item.Name
         drop.Item.Value = itemValue
-        drop:SetPrimaryPartCFrame(CFrame.new(origin) * CFrame.Angles(0, math.pi/2, math.pi/2))
+        drop:SetPrimaryPartCFrame(CFrame.new(origin) * CFrame.fromEulerAnglesXYZ(0, math.rad(90), math.rad(90)))
 
         for _, motor6D in ipairs(item.Motor6Ds:GetChildren()) do
             motor6D.Part0 = drop.PrimaryPart
@@ -186,7 +196,7 @@ function TDSPlayer:Drop(item, origin, target)
         item.Motor6Ds.Parent = drop
         item.Mesh.Parent = drop
 
-        drop.Parent = workspace
+        drop.Parent = workspace.Drops
 
         drop.AlignPosition.Position = target
         Debris:AddItem(drop.AlignPosition, 2)

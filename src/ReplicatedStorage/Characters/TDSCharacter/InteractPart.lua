@@ -16,10 +16,10 @@ function InteractPart.new(character, gui)
     self.collider.Parent = character
 
     local function GetLabel(interact)
-        if interact.Type.Value == "Script" then
-            return require(self.curInteract:FindFirstChildWhichIsA("ModuleScript")).GetPopup()
-        elseif interact.Type.Value == "Item" then
+        if interact.Type.Value == "Item" then
             return "Pickup " .. self.curInteract.Name
+        else
+            return self.curInteract.Message.Value
         end
     end
 

@@ -41,7 +41,7 @@ function TDSCharacter.new(gui, character)
 
     self.interactPart = InteractPart.new(self.character, self.gui)
 
-    self:Remotes()
+    self:Connections()
 
     return self
 end
@@ -107,9 +107,7 @@ end
 function TDSCharacter:Interact()
     local interact = self.interactPart:GetInteract()
     if interact then
-        if interact.Type.Value == "Script" then
-            require(interact:FindFirstChildWhichIsA("ModuleScript")).Interact()
-        elseif interact.Type.Value == "Item" then
+        if interact.Type.Value == "Item" then
             local num = 0
             for _, item in pairs(self.items) do
                 if item then
@@ -122,6 +120,8 @@ function TDSCharacter:Interact()
             else
                 script.Remotes.Pickup:FireServer(interact)
             end
+        else
+            interact.Remote:FireServer()
         end
     end
 end
@@ -245,9 +245,16 @@ function TDSCharacter:Fire(toFire)
     end
 end
 
-function TDSCharacter:Remotes()
+function TDSCharacter:Connections()
     table.insert(self.connections, script.Remotes.Add.OnClientEvent:Connect(function(item)
         self:Add(item)
+    end))
+    
+    table.insert(self.connections, self.character.Humanoid.HealthChanged:Connect(function(value)
+        self.gui:Health(value)
+    end))
+    table.insert(self.connections, self.character.Humanoid.Shield.Changed:Connect(function(value)
+        self.gui:Shield(value)
     end))
 end
 
