@@ -12,7 +12,7 @@ function Door.new(model)
 
         Settings = model.Settings,
 
-        open = false,
+        open = model.Open,
 
         connection = nil
     }
@@ -38,7 +38,7 @@ end
 
 function Door:Interact(pos)
     local goal = self.Settings.CloseOrientation.Value
-    if not self.open then
+    if not self.open.Value then
         goal = self.Settings.OpenOrientation.Value
         if pos.Z > self.interact.Position.Z then
             goal *= -1
@@ -57,7 +57,7 @@ function Door:Interact(pos)
     self.mesh.Collider.CanCollide = true
     self.interact.Parent = self.model
     
-    self.open = not self.open
+    self.open.Value = not self.open.Value
 end
 
 return Door

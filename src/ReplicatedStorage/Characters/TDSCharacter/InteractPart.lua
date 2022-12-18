@@ -15,14 +15,6 @@ function InteractPart.new(character, gui)
     self.collider.Weld.Part0 = character.PrimaryPart
     self.collider.Parent = character
 
-    local function GetLabel(interact)
-        if interact.Type.Value == "Item" then
-            return "Pickup " .. self.curInteract.Name
-        else
-            return self.curInteract.Message.Value
-        end
-    end
-
     local interactions = {}
     self.collider.Touched:Connect(function(part)
         if part.CollisionGroup == "Interact" then
@@ -31,7 +23,7 @@ function InteractPart.new(character, gui)
 
             self.curInteract = interact
 
-            self.gui:Interact(true, GetLabel(self.curInteract))
+            self.gui:Prompt(true, self.curInteract)
         end
     end)
     self.collider.TouchEnded:Connect(function(part)
@@ -44,9 +36,9 @@ function InteractPart.new(character, gui)
             self.curInteract = select(2, next(interactions))
 
             if self.curInteract then
-                self.gui:Interact(true, GetLabel(self.curInteract))
+                self.gui:Prompt(true, self.curInteract)
             else
-                self.gui:Interact(false)
+                self.gui:Prompt(false)
             end
         end
     end)
@@ -54,7 +46,6 @@ function InteractPart.new(character, gui)
     return self
 end
 function InteractPart:Destroy()
-    self.gui:Interact(false)
     self.collider:Destroy()
 end
 

@@ -107,19 +107,9 @@ end
 function TDSCharacter:Interact()
     local interact = self.interactPart:GetInteract()
     if interact then
+        self.gui:Interact()
         if interact.Type.Value == "Item" then
-            local num = 0
-            for _, item in pairs(self.items) do
-                if item then
-                    num += 1
-                end
-            end
-
-            if num >= MAX_ITEMS then
-                self.gui:Full()
-            else
-                script.Remotes.Pickup:FireServer(interact)
-            end
+            script.Remotes.Pickup:FireServer(interact)
         else
             interact.Remote:FireServer()
         end
@@ -248,13 +238,6 @@ end
 function TDSCharacter:Connections()
     table.insert(self.connections, script.Remotes.Add.OnClientEvent:Connect(function(item)
         self:Add(item)
-    end))
-    
-    table.insert(self.connections, self.character.Humanoid.HealthChanged:Connect(function(value)
-        self.gui:Health(value)
-    end))
-    table.insert(self.connections, self.character.Humanoid.Shield.Changed:Connect(function(value)
-        self.gui:Shield(value)
     end))
 end
 

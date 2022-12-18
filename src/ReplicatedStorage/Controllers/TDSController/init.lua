@@ -57,6 +57,10 @@ function TDSController:Destroy()
 end
 
 function TDSController:CharacterAdded(character)
+    repeat wait() until character:FindFirstChild("Humanoid")
+
+    self.gui:CharacterAdded(character)
+
     self.characters["Move"] = MoveCharacter.new(self.mouse, character)
     self.characters["TDS"] = TDSCharacter.new(self.gui, character)
 
@@ -71,6 +75,8 @@ function TDSController:CharacterRemoving()
     if self.alive then
         self:Died()
     end
+
+    self.gui:CharacterRemoving()
 end
 
 function TDSController:Died()
@@ -80,6 +86,8 @@ function TDSController:Died()
         character:Destroy()
     end
     self.characters = {}
+
+    self.gui:Died()
 end
 
 function TDSController:Remotes()

@@ -116,6 +116,10 @@ function TDSPlayer:CharacterAdded(character)
     attach.Part0 = self.character:WaitForChild("Torso")
     attach.Parent = self.character.Torso
 
+    local items = Instance.new("Folder")
+    items.Name = "Items"
+    items.Parent = self.character
+
     local projectileSpawn = Instance.new("Attachment")
     projectileSpawn.Name = "ProjectileSpawn"
     projectileSpawn.Position = Vector3.new(0, PROJECTILE_OFFSET, 0)
@@ -178,7 +182,7 @@ function TDSPlayer:Pickup(item)
     table.insert(self.items, item)
 
     item.Holster.Part1 = self.character.Torso
-    item.Parent = self.character
+    item.Parent = self.character.Items
 
     CharacterRemotes.Add:FireClient(self.player, item)
 end
@@ -225,7 +229,7 @@ function TDSPlayer:Remotes()
     table.insert(self.connections, CharacterRemotes.Equip.OnServerEvent:Connect(function(player, item)
         if player == self.player then
             if self.character and self.alive then
-                if item and item.Parent == self.character then
+                if item and item.Parent == self.character.Items then
                     self.curItem = item
                     self.character.Torso.Attach.Part1 = self.curItem.PrimaryPart
                     self.curItem.Holster.Enabled = false

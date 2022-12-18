@@ -17,7 +17,7 @@ function MoveCharacter.new(mouse, character)
         mouse = mouse,
 
         character = character,
-        humanoid = character:WaitForChild("Humanoid"),
+        humanoid = character.Humanoid,
 
         connection = nil
     }

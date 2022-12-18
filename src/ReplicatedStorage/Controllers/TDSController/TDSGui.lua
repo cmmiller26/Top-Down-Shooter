@@ -15,47 +15,64 @@ function TDSGui.new(player)
     local self = {
         gui = nil,
 
-        curSlot = nil
+        character = nil,
+
+        curSlot = nil,
+        full = nil,
+
+        connections = {}
     }
+
+    setmetatable(self, TDSGui)
 
     self.gui = script.ScreenGui:Clone()
     self.gui.Parent = player.PlayerGui
 
-    setmetatable(self, TDSGui)
-
     return self
 end
 function TDSGui:Destroy()
+    for _, connection in ipairs(self.connections) do
+        connection:Disconnect()
+    end
+
     self.gui:Destroy()
 end
 
-function TDSGui:Health(health)
-    health = math.max(0, health)
-    local frame = self.gui.Stats.Health
+function TDSGui:CharacterAdded(character)
+    self.character = character
 
-    local text = frame.Label.Text
-    local prevHealth = string.split(string.split(text, ">")[2], "<")[1]
-    frame.Label.Text = string.gsub(text, prevHealth, health, 1)
-
-    local tweenInfo = TweenInfo.new(math.sqrt(math.abs(prevHealth - health)) / BAR_SPEED, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(frame.Bar, tweenInfo, {
-        Size = UDim2.fromScale(health / MAX_HEALTH, 1)
-    })
-    tween:Play()
+    table.insert(self.connections, self.character.Humanoid.HealthChanged:Connect(function(health)
+        self:Stat(health, "Health", MAX_HEALTH)
+    end))
+    table.insert(self.connections, self.character.Humanoid.Shield.Changed:Connect(function(shield)
+        self:Stat(shield, "Shield", MAX_SHIELD)
+    end))
 end
-function TDSGui:Shield(shield)
-    shield = math.max(0, shield)
-    local frame = self.gui.Stats.Shield
+function TDSGui:CharacterRemoving()
+    self.character = nil
+end
 
-    local text = frame.Label.Text
-    local prevShield = string.split(string.split(text, ">")[2], "<")[1]
-    frame.Label.Text = string.gsub(text, prevShield, shield, 1)
+function TDSGui:Died()
+    self.gui.Interact.Visible = false
+    self.gui.Interact.Label.Text = ""
+end
 
-    local tweenInfo = TweenInfo.new(math.sqrt(math.abs(prevShield - shield)) / BAR_SPEED, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(frame.Bar, tweenInfo, {
-        Size = UDim2.fromScale(shield / MAX_SHIELD, 1)
-    })
-    tween:Play()
+function TDSGui:Stat(value, name, maxValue)
+    local frame = self.gui.Stats:FindFirstChild(name)
+    if frame then  
+        value = math.max(0, value)
+
+        local text = frame.Label.Text
+        local prevValue = string.split(string.split(text, ">")[2], "<")[1]
+        frame.Label.Text = string.gsub(text, prevValue, value, 1)
+        print(value, prevValue, maxValue)
+
+        local tweenInfo = TweenInfo.new(math.sqrt(math.abs(prevValue - value)) / BAR_SPEED, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+        local tween = TweenService:Create(frame.Bar, tweenInfo, {
+            Size = UDim2.fromScale(value / maxValue, 1)
+        })
+        tween:Play()
+    end
 end
 
 function TDSGui:Equip(slot, item)
@@ -79,29 +96,36 @@ function TDSGui:Unequip()
     end
 end
 
-function TDSGui:Interact(visible, message)
+local function GetLabel(interact)
+    if interact.Type.Value == "Item" then
+        return "Pickup " .. interact.Name
+    elseif interact.Type.Value == "Door" then
+        return interact.Open.Value and "Close Door" or "Open Door"
+    end
+end
+function TDSGui:Prompt(visible, interact)
     local frame = self.gui.Interact
     frame.Visible = visible
-    frame.Label.Text = visible and message or ""
+    frame.Label.Text = visible and GetLabel(interact) or ""
 end
 
-function TDSGui:Full()
-    if not self.gui.Interact:FindFirstChild("Full") then
-        local label = self.gui.Interact.FullPrefab:Clone()
-        label.Name = "Full"
-        label.Parent = self.gui.Interact
-        label.Visible = true
+function TDSGui:Interact()
+    if self.full then
+        self.full = self.gui.Interact.Full:Clone()
+        self.full.Name = "Full"
+        self.full.Parent = self.gui.Interact
+        self.full.Visible = true
 
-        wait(0.35)
+        wait (0.35)
 
-        local tween = TweenService:Create(label, TweenInfo.new(0.15), {
+        local tween = TweenService:Create(self.frame, TweenInfo.new(0.15), {
             BackgroundTransparency = 1,
             TextTransparency = 1
         })
         tween:Play()
         tween.Completed:Wait()
 
-        label:Destroy()
+        self.frame:Destroy()
     end
 end
 
