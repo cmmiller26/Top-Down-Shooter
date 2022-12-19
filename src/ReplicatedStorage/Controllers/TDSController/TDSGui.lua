@@ -8,21 +8,21 @@ local BAR_SPEED = 10
 local DEFAULT_BACKGROUND_COLOR = Color3.fromRGB(50, 50, 50)
 
 local SLOT_DEFAULT_SIZE = UDim2.fromScale(1, 1)
-local SLOT_EQUIP_SIZE = UDim2.fromScale(1.15, 1.15)
+local SLOT_EQUIP_SIZE = UDim2.fromScale(1.25, 1.25)
 
 local TDSGui = {}
 TDSGui.__index = TDSGui
 
-function TDSGui.new(player)
+function TDSGui.new(player, camera)
     local self = {
+        camera = camera,
+
         gui = nil,
 
         character = nil,
 
         curSlot = nil,
-        full = nil,
-
-        connections = {}
+        full = nil
     }
 
     setmetatable(self, TDSGui)
@@ -30,33 +30,26 @@ function TDSGui.new(player)
     self.gui = script.ScreenGui:Clone()
     self.gui.Parent = player.PlayerGui
 
+    self:Scope(1)
+
     return self
 end
 function TDSGui:Destroy()
-    for _, connection in ipairs(self.connections) do
-        connection:Disconnect()
-    end
-
     self.gui:Destroy()
 end
 
 function TDSGui:CharacterAdded(character)
-    self.character = character
-
-    table.insert(self.connections, self.character.Humanoid.HealthChanged:Connect(function(health)
+    character.Humanoid.HealthChanged:Connect(function(health)
         self:Stat(health, "Health", MAX_HEALTH)
-    end))
-    table.insert(self.connections, self.character.Humanoid.Shield.Changed:Connect(function(shield)
+    end)
+    character.Humanoid.Shield.Changed:Connect(function(shield)
         self:Stat(shield, "Shield", MAX_SHIELD)
-    end))
+    end)
 end
-function TDSGui:CharacterRemoving()
-    self.character = nil
-end
-
 function TDSGui:Died()
-    self.gui.Interact.Visible = false
-    self.gui.Interact.Label.Text = ""
+    for _, frame in ipairs(self.gui:GetChildren()) do
+        frame.Visible = false
+    end
 end
 
 function TDSGui:Stat(value, name, maxValue)
@@ -84,7 +77,7 @@ local VALID = {
 function TDSGui:Add(item, slot)
     local frame = self.gui.Items:FindFirstChild("Slot" .. slot)
     if frame then
-        frame.BackgroundColor3 = item.Effects.Rarity.Value
+        frame.BackgroundColor3 = item.Effects.Color.Value
         frame.Number.Visible = true
 
         local mesh = item:Clone()
@@ -160,6 +153,25 @@ function TDSGui:Interact()
         tween.Completed:Wait()
 
         self.frame:Destroy()
+    end
+end
+
+function TDSGui:Scope(value)
+    local button = self.gui.Scopes:FindFirstChild(value)
+    if button then
+        button.Visible = true
+
+        button.Activated:Connect(function()
+            for _, child in ipairs(self.gui.Scopes:GetChildren()) do
+                if child:IsA("TextButton") then
+                    child.Size = SLOT_DEFAULT_SIZE
+                end
+            end
+
+            self.camera:Zoom(value)
+
+            button.Size = SLOT_EQUIP_SIZE
+        end)
     end
 end
 

@@ -41,7 +41,7 @@ function TDSCharacter.new(gui, character)
 
     self.interactPart = InteractPart.new(self.character, self.gui)
 
-    self:Connections()
+    self:Remotes()
 
     return self
 end
@@ -238,9 +238,13 @@ function TDSCharacter:Fire(toFire)
     end
 end
 
-function TDSCharacter:Connections()
+function TDSCharacter:Remotes()
     table.insert(self.connections, script.Remotes.Add.OnClientEvent:Connect(function(item)
         self:Add(item)
+    end))
+
+    table.insert(self.connections, script.Remotes.Scope.OnClientEvent:Connect(function(value)
+        self.gui:Scope(value)
     end))
 end
 

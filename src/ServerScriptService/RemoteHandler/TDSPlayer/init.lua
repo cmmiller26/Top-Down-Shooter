@@ -25,11 +25,20 @@ local MAX_ITEMS = 5
 local MAX_PICKUP_DISTANCE = 4
 local ITEM_RADIUS = 1
 
+local DROP_TIME = 2
+
 local PROJECTILE_OFFSET = 0.5
 
 local ORIGIN_ERROR = 3
 local HIT_POS_ERROR = 1.5
 local SPEED_ERROR = 1.75
+
+local function TableConcat(t1, t2)
+    for i = 1, #t2 do
+        t1[#t1 + 1] = t2[i]
+    end
+    return t1
+end
 
 local TDSPlayer = {}
 TDSPlayer.__index = TDSPlayer
@@ -38,6 +47,7 @@ function TDSPlayer.new(player)
     local self = {
         player = player,
         items = {},
+        scopes = {},
 
         character = nil,
         alive = false,
@@ -126,6 +136,10 @@ function TDSPlayer:CharacterAdded(character)
     projectileSpawn.Parent = self.character.PrimaryPart
 
     HitboxHandler:AddCharacter(self.character)
+
+    wait(5)
+
+    self:Pickup(Items["Master Chef"]:Clone())
 end
 function TDSPlayer:CharacterRemoving()
     if self.alive then
@@ -151,25 +165,30 @@ function TDSPlayer:Died()
 
     HitboxHandler:RemoveCharacter(self.character)
 
-    if next(self.items) then
+    local drops = TableConcat(self.items, self.scopes)
+    if next(drops) then
         local origin = self.character.PrimaryPart.Position
-        local radius = math.sqrt(#self.items - 1) * ITEM_RADIUS * 2
-        for _, point in ipairs(Sunflower(#self.items)) do
-            local offset = point * radius
+        local radius = math.sqrt(#drops - 1) * ITEM_RADIUS * 2
+        for index, point in ipairs(Sunflower(#drops)) do
+            local drop = drops[index]
+            drops[index] = true
 
             local raycastParams = RaycastParams.new()
             raycastParams.FilterDescendantsInstances = {workspace.Baseplate}
             raycastParams.FilterType = Enum.RaycastFilterType.Whitelist
 
-            local target = origin + offset
+            local target = origin + point * radius
             local raycastResult = workspace:Raycast(target, Vector3.new(0, -1000, 0), raycastParams)
             if raycastResult then
                 target = raycastResult.Position
             end
 
-            self:Drop(self.items[1], origin, target)
+            self:Drop(drop, origin, target)
         end
     end
+
+    self.items = {}
+    self.scopes = {}
 
     -- REMOVE LATER: Respawn
     spawn(function()
@@ -187,35 +206,60 @@ function TDSPlayer:Pickup(item)
     CharacterRemotes.Add:FireClient(self.player, item)
 end
 function TDSPlayer:Drop(item, origin, target)
-    local itemValue = Items:FindFirstChild(item.Name, true)
-    if itemValue then
-        local drop = script.Item:Clone()
-        drop.Name = item.Name
-        drop.Item.Value = itemValue
+    if type(item) == "number" then
+        local drop = script.Scope:Clone()
+        drop.Name = item .. "x Scope"
+        drop.Scope.Value = item
         drop:SetPrimaryPartCFrame(CFrame.new(origin) * CFrame.fromEulerAnglesXYZ(0, math.rad(90), math.rad(90)))
 
-        for _, motor6D in ipairs(item.Motor6Ds:GetChildren()) do
-            motor6D.Part0 = drop.PrimaryPart
-        end
-        item.Motor6Ds.Parent = drop
-        item.Mesh.Parent = drop
-
-        drop.Collider.Attachment.ParticleEmitter.Color = ColorSequence.new(item.Effects.Rarity.Value)
+        drop.Mesh.Part.SurfaceGui.Label.Text = item .. "x"
 
         drop.Parent = workspace.Drops
 
         drop.AlignPosition.Position = target
-        Debris:AddItem(drop.AlignPosition, 2)
-    end
+        Debris:AddItem(drop.AlignPosition, DROP_TIME)
 
-    for index, value in ipairs(self.items) do
-        if value == item then
-            table.remove(self.items, index)
-            break
+        for index, value in ipairs(self.scopes) do
+            if value == item then
+                table.remove(self.scopes, index)
+                break
+            end
         end
-    end
+    else
+        local itemValue = Items:FindFirstChild(item.Name, true)
+        if itemValue then
+            local drop = script.Item:Clone()
+            drop.Name = item.Name
+            drop.Item.Value = itemValue
+            drop:SetPrimaryPartCFrame(CFrame.new(origin) * CFrame.fromEulerAnglesXYZ(0, math.rad(90), math.rad(90)))
 
-    item:Destroy()
+            for _, motor6D in ipairs(item.Motor6Ds:GetChildren()) do
+                motor6D.Part0 = drop.PrimaryPart
+            end
+            item.Motor6Ds.Parent = drop
+            item.Mesh.Parent = drop
+
+            drop.Collider.Attachment.ParticleEmitter.Color = ColorSequence.new(item.Effects.Color.Value)
+
+            drop.Parent = workspace.Drops
+
+            drop.AlignPosition.Position = target
+            Debris:AddItem(drop.AlignPosition, DROP_TIME)
+        end
+
+        for index, value in ipairs(self.items) do
+            if value == item then
+                table.remove(self.items, index)
+                break
+            end
+        end
+        item:Destroy()
+    end
+end
+
+function TDSPlayer:Scope(value)
+    table.insert(self.scopes, value)
+    CharacterRemotes.Scope:FireClient(self.player, value)
 end
 
 function TDSPlayer:Remotes()
@@ -243,14 +287,17 @@ function TDSPlayer:Remotes()
     table.insert(self.connections, CharacterRemotes.Pickup.OnServerEvent:Connect(function(player, item)
         if player == self.player then
             if self.character and self.alive then
-                local itemValue = item:FindFirstChild("Item")
-                if item and itemValue then
-                    if (item.PrimaryPart.Position - self.character.PrimaryPart.Position).Magnitude <= MAX_PICKUP_DISTANCE then
-                        if itemValue.Value and #self.items < MAX_ITEMS then
-                            self:Pickup(itemValue.Value:Clone())
-                            item:Destroy()
-                        end
+                if item and (item.PrimaryPart.Position - self.character.PrimaryPart.Position).Magnitude <= MAX_PICKUP_DISTANCE then
+                    local itemValue = item:FindFirstChild("Item")
+                    local scopeValue = item:FindFirstChild("Scope")
+
+                    if itemValue and itemValue.Value and #self.items < MAX_ITEMS then
+                        self:Pickup(itemValue.Value:Clone())
+                    elseif scopeValue then
+                        self:Scope(scopeValue.Value)
                     end
+
+                    item:Destroy()
                 end
             end
         end
@@ -258,27 +305,19 @@ function TDSPlayer:Remotes()
     table.insert(self.connections, CharacterRemotes.Drop.OnServerEvent:Connect(function(player, item)
         if player == self.player then
             if self.character and self.alive then
-                if item then
-                    local bool = false
-                    for _, value in ipairs(self.items) do
-                        if value == item then
-                            bool = true
-                        end
-                    end
-                    if bool then
-                        local raycastParams = RaycastParams.new()
-                        raycastParams.FilterDescendantsInstances = {workspace.Baseplate}
-                        raycastParams.FilterType = Enum.RaycastFilterType.Whitelist
+                if item and item.Parent == self.character then
+                    local raycastParams = RaycastParams.new()
+                    raycastParams.FilterDescendantsInstances = {workspace.Baseplate}
+                    raycastParams.FilterType = Enum.RaycastFilterType.Whitelist
 
-                        local origin = self.character.PrimaryPart.Position
-                        local target = origin
-                        local raycastResult = workspace:Raycast(target, Vector3.new(0, -1000, 0), raycastParams)
-                        if raycastResult then
-                            target = raycastResult.Position
-                        end
-
-                        self:Drop(item, origin, target)
+                    local origin = self.character.PrimaryPart.Position
+                    local target = origin
+                    local raycastResult = workspace:Raycast(target, Vector3.new(0, -1000, 0), raycastParams)
+                    if raycastResult then
+                        target = raycastResult.Position
                     end
+
+                    self:Drop(item, origin, target)
                 end
             end
         end

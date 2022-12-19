@@ -45,10 +45,10 @@ function TDSCamera:Destroy()
     RunService:UnbindFromRenderStep("UpdateTDSCamera")
 end
 
-function TDSCamera:ChangeZoom(zoom)
+function TDSCamera:Zoom(zoom)
     self.zoom = zoom
 end
-function TDSCamera:ChangeSubject(subject)
+function TDSCamera:Subject(subject)
     self.subject = subject
 end
 

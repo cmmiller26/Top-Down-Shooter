@@ -18,7 +18,7 @@ function TDSController.new(player, camera)
     local self = {
         player = player,
         mouse = player:GetMouse(),
-        camera = TDSCamera.new(camera),
+        camera = nil,
 
         gui = nil,
 
@@ -31,7 +31,7 @@ function TDSController.new(player, camera)
 
     script.Remotes.Connect:FireServer()
 
-    self.gui = TDSGui.new(self.player)
+    self.camera = TDSCamera.new(camera)
 
     table.insert(self.connections, self.player.CharacterAdded:Connect(function(character)
         self:CharacterAdded(character)
@@ -59,12 +59,14 @@ end
 function TDSController:CharacterAdded(character)
     repeat wait() until character:FindFirstChild("Humanoid")
 
+    self.camera:Zoom(1)
+    self.camera:Subject(character)
+
+    self.gui = TDSGui.new(self.player, self.camera)
     self.gui:CharacterAdded(character)
 
     self.characters["Move"] = MoveCharacter.new(self.mouse, character)
     self.characters["TDS"] = TDSCharacter.new(self.gui, character)
-
-    TDSCamera:ChangeSubject(character)
 
     table.insert(self.connections, character.Humanoid.Died:Connect(function()
         self:Died()
@@ -76,7 +78,7 @@ function TDSController:CharacterRemoving()
         self:Died()
     end
 
-    self.gui:CharacterRemoving()
+    self.gui:Destroy()
 end
 
 function TDSController:Died()
