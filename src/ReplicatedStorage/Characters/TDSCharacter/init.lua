@@ -128,7 +128,7 @@ function TDSCharacter:Add(item)
     self.animations[item] = self.character.Humanoid.Animator:LoadAnimation(item.Idle)
 end
 function TDSCharacter:Drop()
-    if self.curItem then
+    if self.curItem and not self.isFiring then
         local item = self.curItem
         self:Unequip()
 
@@ -146,6 +146,9 @@ end
 
 function TDSCharacter:Unequip()
     if self.curItem then
+        self.toFire = false
+        self.canFire = false
+
         self.gui:Unequip()
 
         for _, animation in pairs(self.animations) do
@@ -156,10 +159,7 @@ function TDSCharacter:Unequip()
         self.character.Torso.Attach.Part1 = nil
 
         script.Remotes.Unequip:FireServer()
-
         self.curItem = nil
-        self.canFire = false
-        self.toFire = false
     end
 end
 function TDSCharacter:Equip(slot)
@@ -213,7 +213,7 @@ function TDSCharacter:Fire(toFire)
                 raycastParams = raycastParams,
                 meshPrefab = self.curItem.Effects.Projectile.Value
             })
-            
+
             script.Remotes.Fire:FireServer(origin, direction, fireID, tick())
 
             projectile.Hit.Event:Connect(function(raycastResult)
@@ -229,12 +229,12 @@ function TDSCharacter:Fire(toFire)
         repeat
             self.canFire = false
             self.isFiring = true
-    
+
             Fire()
-    
+
             self.isFiring = false
             self.canFire = true
-        until not self.toFire or not self.curItem.Settings.Auto.Value
+        until not self.curItem or not self.toFire or not self.curItem.Settings.Auto.Value
     end
 end
 

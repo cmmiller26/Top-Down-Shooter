@@ -76,15 +76,35 @@ function TDSGui:Stat(value, name, maxValue)
     end
 end
 
+local VALID = {
+    ["RootPart"] = true,
+    ["Mesh"] = true,
+    ["Motor6Ds"] = true
+}
 function TDSGui:Add(item, slot)
     local frame = self.gui.Items:FindFirstChild("Slot" .. slot)
     if frame then
         frame.BackgroundColor3 = item.Effects.Rarity.Value
+        frame.Number.Visible = true
+
+        local mesh = item:Clone()
+        for _, child in ipairs(mesh:GetChildren()) do
+            if not VALID[child.Name] then
+                child:Destroy()
+            end
+        end
+        mesh:SetPrimaryPartCFrame(item.Effects.Image.Value)
+        mesh.Parent = frame.Image
     end
 end
 function TDSGui:Remove(slot)
     local frame = self.gui.Items:FindFirstChild("Slot" .. slot)
     if frame then
+        for _, child in ipairs(frame.Image:GetChildren()) do
+            child:Destroy()
+        end
+
+        frame.Number.Visible = false
         frame.BackgroundColor3 = DEFAULT_BACKGROUND_COLOR
     end
 end
