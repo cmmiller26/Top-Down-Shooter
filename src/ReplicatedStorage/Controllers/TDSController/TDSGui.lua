@@ -5,6 +5,8 @@ local MAX_SHIELD = 100
 
 local BAR_SPEED = 10
 
+local DEFAULT_BACKGROUND_COLOR = Color3.fromRGB(50, 50, 50)
+
 local SLOT_DEFAULT_SIZE = UDim2.fromScale(1, 1)
 local SLOT_EQUIP_SIZE = UDim2.fromScale(1.15, 1.15)
 
@@ -65,13 +67,25 @@ function TDSGui:Stat(value, name, maxValue)
         local text = frame.Label.Text
         local prevValue = string.split(string.split(text, ">")[2], "<")[1]
         frame.Label.Text = string.gsub(text, prevValue, value, 1)
-        print(value, prevValue, maxValue)
 
         local tweenInfo = TweenInfo.new(math.sqrt(math.abs(prevValue - value)) / BAR_SPEED, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
         local tween = TweenService:Create(frame.Bar, tweenInfo, {
             Size = UDim2.fromScale(value / maxValue, 1)
         })
         tween:Play()
+    end
+end
+
+function TDSGui:Add(item, slot)
+    local frame = self.gui.Items:FindFirstChild("Slot" .. slot)
+    if frame then
+        frame.BackgroundColor3 = item.Effects.Rarity.Value
+    end
+end
+function TDSGui:Remove(slot)
+    local frame = self.gui.Items:FindFirstChild("Slot" .. slot)
+    if frame then
+        frame.BackgroundColor3 = DEFAULT_BACKGROUND_COLOR
     end
 end
 

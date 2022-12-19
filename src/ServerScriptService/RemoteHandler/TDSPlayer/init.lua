@@ -200,6 +200,8 @@ function TDSPlayer:Drop(item, origin, target)
         item.Motor6Ds.Parent = drop
         item.Mesh.Parent = drop
 
+        drop.Collider.Attachment.ParticleEmitter.Color = ColorSequence.new(item.Effects.Rarity.Value)
+
         drop.Parent = workspace.Drops
 
         drop.AlignPosition.Position = target

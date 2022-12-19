@@ -120,9 +120,11 @@ function TDSCharacter:Add(item)
     for index, value in pairs(self.items) do
         if not value then
             self.items[index] = item
+            self.gui:Add(item, index)
             break
         end
     end
+
     self.animations[item] = self.character.Humanoid.Animator:LoadAnimation(item.Idle)
 end
 function TDSCharacter:Drop()
@@ -134,6 +136,7 @@ function TDSCharacter:Drop()
 
         for index, value in pairs(self.items) do
             if value == item then
+                self.gui:Remove(index)
                 self.items[index] = false
                 break
             end
