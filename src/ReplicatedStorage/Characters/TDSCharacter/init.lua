@@ -84,7 +84,9 @@ function TDSCharacter:BindActions()
 
     local function onInteract(_, inputState)
         if inputState == Enum.UserInputState.Begin then
-            self:Interact()
+            self:Interact(true)
+        elseif inputState == Enum.UserInputState.End then
+            self:Interact(false)
         end
     end
     ContextActionService:BindAction("TDSInteract", onInteract, false, Enum.KeyCode.F)
@@ -104,16 +106,8 @@ function TDSCharacter:UnbindActions()
     end
 end
 
-function TDSCharacter:Interact()
-    local interact = self.interactPart:GetInteract()
-    if interact then
-        self.gui:Interact()
-        if interact.Type.Value == "Item" then
-            script.Remotes.Pickup:FireServer(interact)
-        else
-            interact.Remote:FireServer()
-        end
-    end
+function TDSCharacter:Interact(bool)
+    self.gui:Interact(self.interactPart:GetInteract(), bool)
 end
 
 function TDSCharacter:Add(item)
@@ -203,6 +197,8 @@ function TDSCharacter:Fire(toFire)
         local function Fire()
             local fireID = self.fireID
             self.fireID += 1
+
+            self.curItem.PrimaryPart.Barrel.Flash:Emit(1)
 
             local origin = self.character.PrimaryPart.ProjectileSpawn.WorldPosition
             local direction = self.character.PrimaryPart.CFrame.LookVector

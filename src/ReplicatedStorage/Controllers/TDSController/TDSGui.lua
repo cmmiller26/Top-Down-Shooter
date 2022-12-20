@@ -3,6 +3,8 @@ local TweenService = game:GetService("TweenService")
 local MAX_HEALTH = 100
 local MAX_SHIELD = 100
 
+local MAX_ITEMS = 5
+
 local BAR_SPEED = 10
 
 local DEFAULT_BACKGROUND_COLOR = Color3.fromRGB(50, 50, 50)
@@ -13,13 +15,13 @@ local SLOT_EQUIP_SIZE = UDim2.fromScale(1.25, 1.25)
 local TDSGui = {}
 TDSGui.__index = TDSGui
 
-function TDSGui.new(player, camera)
+function TDSGui.new(player, camera, character)
     local self = {
         camera = camera,
 
         gui = nil,
 
-        character = nil,
+        character = character,
 
         curSlot = nil,
         full = nil
@@ -30,6 +32,13 @@ function TDSGui.new(player, camera)
     self.gui = script.ScreenGui:Clone()
     self.gui.Parent = player.PlayerGui
 
+    self.character.Humanoid.HealthChanged:Connect(function(health)
+        self:Stat(health, "Health", MAX_HEALTH)
+    end)
+    self.character.Humanoid.Shield.Changed:Connect(function(shield)
+        self:Stat(shield, "Shield", MAX_SHIELD)
+    end)
+
     self:Scope(1)
 
     return self
@@ -38,14 +47,6 @@ function TDSGui:Destroy()
     self.gui:Destroy()
 end
 
-function TDSGui:CharacterAdded(character)
-    character.Humanoid.HealthChanged:Connect(function(health)
-        self:Stat(health, "Health", MAX_HEALTH)
-    end)
-    character.Humanoid.Shield.Changed:Connect(function(shield)
-        self:Stat(shield, "Shield", MAX_SHIELD)
-    end)
-end
 function TDSGui:Died()
     for _, frame in ipairs(self.gui:GetChildren()) do
         frame.Visible = false
@@ -59,7 +60,7 @@ function TDSGui:Stat(value, name, maxValue)
 
         local text = frame.Label.Text
         local prevValue = string.split(string.split(text, ">")[2], "<")[1]
-        frame.Label.Text = string.gsub(text, prevValue, value, 1)
+        frame.Label.Text = string.gsub(text, prevValue, math.round(value), 1)
 
         local tweenInfo = TweenInfo.new(math.sqrt(math.abs(prevValue - value)) / BAR_SPEED, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
         local tween = TweenService:Create(frame.Bar, tweenInfo, {
@@ -136,23 +137,37 @@ function TDSGui:Prompt(visible, interact)
     frame.Label.Text = visible and GetLabel(interact) or ""
 end
 
-function TDSGui:Interact()
-    if self.full then
+function TDSGui:Interact(interact, bool)
+    if interact then
+        if interact.Type.Value == "Item" then
+            if bool then
+                if #self.character.Items:GetChildren() < MAX_ITEMS then
+                    script.Remotes.Pickup:FireServer(interact)
+                else
+                    self:Full()
+                end
+            end
+        end
+    end
+end
+
+function TDSGui:Full()
+    if not self.full then
         self.full = self.gui.Interact.Full:Clone()
-        self.full.Name = "Full"
         self.full.Parent = self.gui.Interact
         self.full.Visible = true
 
         wait (0.35)
 
-        local tween = TweenService:Create(self.frame, TweenInfo.new(0.15), {
+        local tween = TweenService:Create(self.full, TweenInfo.new(0.15), {
             BackgroundTransparency = 1,
             TextTransparency = 1
         })
         tween:Play()
         tween.Completed:Wait()
 
-        self.frame:Destroy()
+        self.full:Destroy()
+        self.full = nil
     end
 end
 
@@ -161,7 +176,7 @@ function TDSGui:Scope(value)
     if button then
         button.Visible = true
 
-        button.Activated:Connect(function()
+        local function Activated()
             for _, child in ipairs(self.gui.Scopes:GetChildren()) do
                 if child:IsA("TextButton") then
                     child.Size = SLOT_DEFAULT_SIZE
@@ -171,7 +186,10 @@ function TDSGui:Scope(value)
             self.camera:Zoom(value)
 
             button.Size = SLOT_EQUIP_SIZE
-        end)
+        end
+        button.Activated:Connect(Activated)
+        
+        Activated()
     end
 end
 

@@ -31,7 +31,7 @@ local PROJECTILE_OFFSET = 0.5
 
 local ORIGIN_ERROR = 3
 local HIT_POS_ERROR = 1.5
-local SPEED_ERROR = 1.75
+local SPEED_ERROR = 0.25
 
 local function TableConcat(t1, t2)
     for i = 1, #t2 do
@@ -136,10 +136,6 @@ function TDSPlayer:CharacterAdded(character)
     projectileSpawn.Parent = self.character.PrimaryPart
 
     HitboxHandler:AddCharacter(self.character)
-
-    wait(5)
-
-    self:Pickup(Items["Master Chef"]:Clone())
 end
 function TDSPlayer:CharacterRemoving()
     if self.alive then
@@ -295,6 +291,8 @@ function TDSPlayer:Remotes()
                         self:Pickup(itemValue.Value:Clone())
                     elseif scopeValue then
                         self:Scope(scopeValue.Value)
+                    else
+                        return
                     end
 
                     item:Destroy()
@@ -305,7 +303,7 @@ function TDSPlayer:Remotes()
     table.insert(self.connections, CharacterRemotes.Drop.OnServerEvent:Connect(function(player, item)
         if player == self.player then
             if self.character and self.alive then
-                if item and item.Parent == self.character then
+                if item and item.Parent == self.character.Items then
                     local raycastParams = RaycastParams.new()
                     raycastParams.FilterDescendantsInstances = {workspace.Baseplate}
                     raycastParams.FilterType = Enum.RaycastFilterType.Whitelist
@@ -326,25 +324,26 @@ function TDSPlayer:Remotes()
     table.insert(self.connections, CharacterRemotes.Fire.OnServerEvent:Connect(function(player, origin, direction, fireID)
         if player == self.player then
             if self.character and self.alive then
-                local pastPos = self.character.PrimaryPart.ProjectileSpawn.WorldPosition
-                Debug.Vector(origin, pastPos, Color3.new(0, 0, 1))
-                if (origin - pastPos).Magnitude <= ORIGIN_ERROR then
-                    self.fireStates[fireID] = FireState.new(
-                        origin,
-                        direction.Unit * self.curItem.Settings.Distance.Value,
-                        self.curItem.Settings.Speed.Value,
-                        self.curItem.Settings.Damage.Value
-                    )
+                if self.curItem and self.curItem.Parent == self.character.Items then
+                    local pastPos = self.character.PrimaryPart.ProjectileSpawn.WorldPosition
+                    Debug.Vector(origin, pastPos, Color3.new(0, 0, 1))
+                    if (origin - pastPos).Magnitude <= ORIGIN_ERROR then
+                        self.fireStates[fireID] = FireState.new(
+                            origin,
+                            direction.Unit * self.curItem.Settings.Distance.Value,
+                            self.curItem.Settings.Speed.Value,
+                            self.curItem.Settings.Damage.Value
+                        )
 
-                    for _, player in ipairs(Players:GetPlayers()) do
-                        if player ~= self.player then
-                            ControllerRemotes.ReplicateFire:FireClient(
-                                player,
-                                self.character,
-                                direction.Unit * self.curItem.Settings.Distance.Value,
-                                self.curItem.Settings.Distance.Value,
-                                self.curItem.Effects.Projectile.Value
-                            )
+                        for _, player in ipairs(Players:GetPlayers()) do
+                            if player ~= self.player then
+                                ControllerRemotes.ReplicateFire:FireClient(
+                                    player,
+                                    self.character,
+                                    self.curItem,
+                                    direction.Unit * self.curItem.Settings.Distance.Value
+                                )
+                            end
                         end
                     end
                 end
@@ -375,8 +374,16 @@ function TDSPlayer:Remotes()
                         if raycastResult then
                             Debug.Vector(fireState.origin, raycastResult.Position, Color3.new(0, 1, 1))
                             local distance = (raycastResult.Position - fireState.origin).Magnitude
-                            if distance / fireState.speed <= (tick() - fireState.serverTick) * SPEED_ERROR then
-                                hit.Parent.Humanoid:TakeDamage(fireState.damage)
+                            local predictTime = distance / fireState.speed
+                            local realTime = (tick() - fireState.serverTick)
+                            if math.abs(realTime - predictTime) <= SPEED_ERROR then
+                                local humanoid = hit.Parent.Humanoid
+                                local shield = humanoid:FindFirstChild("Shield")
+                                if shield and shield.Value > 0 then
+                                    shield.Value = math.max(0, shield.Value - fireState.damage)
+                                else
+                                    humanoid:TakeDamage(fireState.damage)
+                                end
                             end
                         end
 

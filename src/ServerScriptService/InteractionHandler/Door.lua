@@ -1,5 +1,7 @@
 local TweenService = game:GetService("TweenService")
 
+local TIME_ERROR = 0.1
+
 local Door = {}
 Door.__index = Door
 
@@ -13,27 +15,45 @@ function Door.new(model)
         Settings = model.Settings,
 
         open = model.Open,
+        interactTime = model.Time,
 
-        connection = nil
+        interactions = {},
+
+        connections = {}
     }
 
     setmetatable(self, Door)
 
-    self.connection = self.model.Remote.OnServerEvent:Connect(function(player)
+    table.insert(self.connections, self.model.Begin.OnServerEvent:Connect(function(player)
         if player.Character then
             local humanoid = player.Character:FindFirstChildWhichIsA("Humanoid")
             if humanoid and humanoid.Health > 0 then
-                self:Interact(player.Character.PrimaryPart.Position)
+                self.interactions[player] = {
+                    serverTick = tick(),
+                    position = player.Character.PrimaryPart.Position
+                }
             end
         end
-    end)
+    end))
+    table.insert(self.connections, self.model.End.OnServerEvent:Connect(function(player)
+        local interaction = self.interactions[player]
+        if interaction then
+            if tick() - interaction.serverTick >= self.interactTime.Value - TIME_ERROR then
+                self:Interact(interaction.position)
+            end
+        end
+    end))
 
     return self
 end
 function Door:Destroy()
-    self.connection:Destroy()
+    for _, connection in ipairs(self.connections) do
+        connection:Disconnect()
+    end
 
-    self:Close()
+    if self.open.Value then
+        self:Interact()
+    end
 end
 
 function Door:Interact(pos)
@@ -45,7 +65,7 @@ function Door:Interact(pos)
         end
     end
 
-    local tweenInfo = TweenInfo.new(self.Settings.Time.Value, Enum.EasingStyle.Sine)
+    local tweenInfo = TweenInfo.new(self.Settings.TweenTime.Value, Enum.EasingStyle.Sine)
     local tween = TweenService:Create(self.mesh.PrimaryPart, tweenInfo, {Orientation = goal})
     tween:Play()
     

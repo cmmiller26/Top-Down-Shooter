@@ -59,11 +59,9 @@ end
 function TDSController:CharacterAdded(character)
     repeat wait() until character:FindFirstChild("Humanoid")
 
-    self.camera:Zoom(1)
     self.camera:Subject(character)
 
-    self.gui = TDSGui.new(self.player, self.camera)
-    self.gui:CharacterAdded(character)
+    self.gui = TDSGui.new(self.player, self.camera, character)
 
     self.characters["Move"] = MoveCharacter.new(self.mouse, character)
     self.characters["TDS"] = TDSCharacter.new(self.gui, character)
@@ -93,16 +91,18 @@ function TDSController:Died()
 end
 
 function TDSController:Remotes()
-    table.insert(self.connections, script.Remotes.ReplicateFire.OnClientEvent:Connect(function(character, velocity, distance, meshPrefab)
+    table.insert(self.connections, script.Remotes.ReplicateFire.OnClientEvent:Connect(function(character, item, velocity)
+        item.PrimaryPart.Barrel.Flash:Emit(1)
+
         local raycastParams = RaycastParams.new()
         raycastParams.FilterDescendantsInstances = {character}
         raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
         Projectile.new({
             origin = character.PrimaryPart.ProjectileSpawn.WorldPosition,
             velocity = velocity,
-            distance = distance,
+            distance = item.Settings.Distance.Value,
             raycastParams = raycastParams,
-            meshPrefab = meshPrefab
+            meshPrefab = item.Effects.Projectile.Value
         })
     end))
 end
