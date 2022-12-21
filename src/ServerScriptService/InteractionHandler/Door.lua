@@ -28,18 +28,20 @@ function Door.new(model)
         if player.Character then
             local humanoid = player.Character:FindFirstChildWhichIsA("Humanoid")
             if humanoid and humanoid.Health > 0 then
-                self.interactions[player] = {
-                    serverTick = tick(),
-                    position = player.Character.PrimaryPart.Position
-                }
+                self.interactions[player] = tick()
             end
         end
     end))
     table.insert(self.connections, self.model.End.OnServerEvent:Connect(function(player)
-        local interaction = self.interactions[player]
-        if interaction then
-            if tick() - interaction.serverTick >= self.interactTime.Value - TIME_ERROR then
-                self:Interact(interaction.position)
+        if player.Character then
+            local humanoid = player.Character:FindFirstChildWhichIsA("Humanoid")
+            if humanoid and humanoid.Health > 0 then
+                local serverTick = self.interactions[player]
+                if serverTick then
+                    if tick() - serverTick >= self.interactTime.Value - TIME_ERROR then
+                        self:Interact(player.Character.PrimaryPart.Position)
+                    end
+                end
             end
         end
     end))

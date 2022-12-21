@@ -24,7 +24,9 @@ function TDSGui.new(player, camera, character)
         character = character,
 
         curSlot = nil,
-        full = nil
+        full = nil,
+
+        bar = nil
     }
 
     setmetatable(self, TDSGui)
@@ -138,36 +140,52 @@ function TDSGui:Prompt(visible, interact)
 end
 
 function TDSGui:Interact(interact, bool)
-    if interact then
+    if interact and bool then
         if interact.Type.Value == "Item" then
-            if bool then
-                if #self.character.Items:GetChildren() < MAX_ITEMS then
-                    script.Remotes.Pickup:FireServer(interact)
-                else
-                    self:Full()
-                end
+            if #self.character.Items:GetChildren() < MAX_ITEMS then
+                script.Remotes.Pickup:FireServer(interact)
+            elseif not self.full then
+                self.full = self.gui.Interact.Full:Clone()
+                self.full.Parent = self.gui.Interact
+                self.full.Visible = true
+        
+                wait (0.35)
+        
+                local tween = TweenService:Create(self.full, TweenInfo.new(0.15), {
+                    BackgroundTransparency = 1,
+                    TextTransparency = 1
+                })
+                tween:Play()
+                tween.Completed:Wait()
+        
+                self.full:Destroy()
+                self.full = nil
+            end
+        else
+            interact.Begin:FireServer()
+
+            self.bar = self.gui.Interact.Label.Bar:Clone()
+            self.bar.Parent = self.gui.Interact.Label
+            self.bar.Visible = true
+
+            local tween = TweenService:Create(self.bar, TweenInfo.new(interact.Time.Value), {
+                Size = UDim2.fromScale(1, self.bar.Size.Y.Scale)
+            })
+            tween:Play()
+            tween.Completed:Wait()
+
+            if tween.Instance == self.bar then
+                self.bar:Destroy()
+                self.bar = nil
+
+                interact.End:FireServer()
             end
         end
     end
-end
-
-function TDSGui:Full()
-    if not self.full then
-        self.full = self.gui.Interact.Full:Clone()
-        self.full.Parent = self.gui.Interact
-        self.full.Visible = true
-
-        wait (0.35)
-
-        local tween = TweenService:Create(self.full, TweenInfo.new(0.15), {
-            BackgroundTransparency = 1,
-            TextTransparency = 1
-        })
-        tween:Play()
-        tween.Completed:Wait()
-
-        self.full:Destroy()
-        self.full = nil
+    
+    if not bool and self.bar then
+        self.bar:Destroy()
+        self.bar = nil
     end
 end
 

@@ -13,6 +13,7 @@ local FireState = require(script.FireState)
 local Items = ServerStorage.Items
 
 local ControllerRemotes = ReplicatedStorage.Controllers.TDSController.Remotes
+local GuiRemotes = ReplicatedStorage.Controllers.TDSController.TDSGui.Remotes
 local CharacterRemotes = ReplicatedStorage.Characters.TDSCharacter.Remotes
 
 local HitboxCharacter = ReplicatedStorage.HitboxCharacter
@@ -280,7 +281,7 @@ function TDSPlayer:Remotes()
         end
     end))
 
-    table.insert(self.connections, CharacterRemotes.Pickup.OnServerEvent:Connect(function(player, item)
+    table.insert(self.connections, GuiRemotes.Pickup.OnServerEvent:Connect(function(player, item)
         if player == self.player then
             if self.character and self.alive then
                 if item and (item.PrimaryPart.Position - self.character.PrimaryPart.Position).Magnitude <= MAX_PICKUP_DISTANCE then
