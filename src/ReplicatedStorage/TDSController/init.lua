@@ -42,8 +42,8 @@ function TDSController:CharacterAdded(character)
 
     self.camera:SetSubject(character)
     
-    table.insert(self.characters, TDSCharacter.new(self, character))
-    table.insert(self.characters, MoveCharacter2D.new(self, character))
+    table.insert(self.characters, TDSCharacter.new(self.player, character))
+    table.insert(self.characters, MoveCharacter2D.new(self.mouse, character))
 end
 function TDSController:CharacterRemoving()
     for _, character in ipairs(self.characters) do

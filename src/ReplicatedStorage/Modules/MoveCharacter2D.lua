@@ -12,9 +12,9 @@ local VALID_STATES = {
 local MoveCharacter2D = {}
 MoveCharacter2D.__index = MoveCharacter2D
 
-function MoveCharacter2D.new(controller, character)
+function MoveCharacter2D.new(mouse, character)
     local self = {
-        mouse = controller.mouse,
+        mouse = mouse,
 
         character = character,
         humanoid = character.Humanoid,
@@ -41,19 +41,21 @@ function MoveCharacter2D:Destroy()
 end
 
 function MoveCharacter2D:Update()
-    local mouseRay = self.mouse.UnitRay
+    if self.humanoid.Health > 0 then
+        local mouseRay = self.mouse.UnitRay
 
-    local raycastParams = RaycastParams.new()
-    raycastParams.FilterDescendantsInstances = {workspace.Baseplate}
-    raycastParams.FilterType = Enum.RaycastFilterType.Whitelist
+        local raycastParams = RaycastParams.new()
+        raycastParams.FilterDescendantsInstances = {workspace.Baseplate}
+        raycastParams.FilterType = Enum.RaycastFilterType.Whitelist
 
-    local raycastResult = workspace:Raycast(mouseRay.Origin, mouseRay.Direction * 1000, raycastParams)
-    local hitPos = raycastResult and raycastResult.Position or mouseRay.Origin + mouseRay.Direction
+        local raycastResult = workspace:Raycast(mouseRay.Origin, mouseRay.Direction * 1000, raycastParams)
+        local hitPos = raycastResult and raycastResult.Position or mouseRay.Origin + mouseRay.Direction
 
-    local rootPos = self.character.PrimaryPart.Position
-    self.character.PrimaryPart.CFrame = CFrame.new(rootPos, Vector3.new(hitPos.X, rootPos.Y, hitPos.Z))
+        local rootPos = self.character.PrimaryPart.Position
+        self.character.PrimaryPart.CFrame = CFrame.new(rootPos, Vector3.new(hitPos.X, rootPos.Y, hitPos.Z))
 
-    self.humanoid:Move(Vector3.new(-Input:GetAxis("Horizontal"), 0, Input:GetAxis("Vertical")), false)
+        self.humanoid:Move(Vector3.new(-Input:GetAxis("Horizontal"), 0, Input:GetAxis("Vertical")), false)
+    end
 end
 
 return MoveCharacter2D
